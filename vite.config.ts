@@ -34,4 +34,12 @@ export default defineConfig({
       external: (id) => externalModules.has(id),
     },
   },
+  define: {
+    __PACKAGE_VERSION__: process.env.npm_package_version
+      ? JSON.stringify(process.env.npm_package_version)
+      : '"unknown"',
+    'process.env.NODE_ENV': process.env.NODE_ENV
+      ? JSON.stringify(process.env.NODE_ENV)
+      : '"development"',
+  },
 });
