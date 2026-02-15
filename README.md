@@ -50,6 +50,8 @@ const invoice = await client.invoices.create({
   contact: { name: 'ACME s.r.o.' },
   items: [{ name: 'Consulting', quantity: 1, unit_price: 100, tax: 20 }],
 });
+
+const pdf = await client.invoices.downloadPdf(123, 'sk');
 ```
 
 ## CLI usage
@@ -70,8 +72,11 @@ npx superfaktura contacts create \
 # Create invoice from file
 npx superfaktura invoices create --data @./invoice-create.json
 
+# Download invoice PDF
+npx superfaktura invoices pdf 123 --path ./invoice-123.pdf
+
 # JSON output for automations/agents
-npx superfaktura invoices get --id 123 --output json
+npx superfaktura invoices get 123 --output json
 ```
 
 Global options:
