@@ -1,0 +1,56 @@
+{
+  "name": "superfaktura-library",
+  "version": "0.1.0",
+  "description": "Simple SuperFaktura SDK and CLI for contacts and invoices.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "prettier --check .",
+    "format": "prettier --write .",
+    "prepublishOnly": "pnpm run build"
+  },
+  "bin": {
+    "superfaktura": "./bin/superfaktura.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "keywords": [
+    "superfaktura",
+    "invoices",
+    "contacts",
+    "cli",
+    "sdk"
+  ],
+  "author": "Martin Jakubík <martindzejky@gmail.com>",
+  "license": "MIT",
+  "packageManager": "pnpm@10.6.5",
+  "dependencies": {
+    "commander": "^14.0.3",
+    "dotenv": "^17.3.1",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4"
+  }
+}
