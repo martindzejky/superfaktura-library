@@ -3,7 +3,15 @@ import { writeFile } from 'node:fs/promises';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess } from '../output-format';
-import type { InvoiceCreatePayload, InvoicePaymentPayload, InvoiceUpdatePayload, UnknownRecord } from '../../types';
+import type {
+  InvoiceCreatePayload,
+  InvoicePaymentPayload,
+  InvoiceUpdatePayload,
+  Result,
+  UnknownRecord,
+} from '../../types';
+import { toRecord } from '../../utils';
+import type { OutputFormat } from '../types';
 
 interface InvoiceOptions {
   data?: string;
@@ -94,6 +102,59 @@ function buildInvoiceUpdatePayloadFromFlags(id: number, options: InvoiceOptions)
   return payload as unknown as InvoiceUpdatePayload;
 }
 
+function printInvoiceDetail(output: OutputFormat, result: Result<UnknownRecord>): void {
+  if (output === 'json') {
+    printSuccess(output, 'invoices.get', result);
+    return;
+  }
+  const data = result.data;
+  const invoice = toRecord(data.Invoice);
+  const summary = toRecord(data['0']);
+  const client = toRecord(data.Client);
+
+  if (!invoice) {
+    console.log('No data.');
+    return;
+  }
+
+  console.log(`id: ${invoice.id ?? ''}`);
+  console.log(`name: ${invoice.name ?? ''}`);
+  console.log(`total: ${summary?.total ?? ''}`);
+  console.log(`contact_id: ${client?.id ?? ''}`);
+  console.log(`contact_name: ${client?.name ?? ''}`);
+  console.log(`contact_email: ${client?.email ?? ''}`);
+}
+
+function printInvoiceList(output: OutputFormat, result: Result<UnknownRecord>): void {
+  if (output === 'json') {
+    printSuccess(output, 'invoices.list', result);
+    return;
+  }
+  const data = result.data;
+  const items = Array.isArray(data.items) ? data.items : [];
+
+  if (items.length === 0) {
+    console.log('No invoices.');
+    return;
+  }
+
+  const itemCount = data.itemCount ?? items.length;
+  const page = data.page ?? 1;
+  console.log(`${itemCount} items, page ${page}`);
+
+  for (const item of items) {
+    const record = toRecord(item);
+    if (!record) continue;
+    const invoice = toRecord(record.Invoice);
+    const summary = toRecord(record['0']);
+    const client = toRecord(record.Client);
+    if (!invoice) continue;
+    console.log(
+      `${invoice.id ?? ''}, ${invoice.name ?? ''}, ${summary?.total ?? ''}, ${client?.name ?? ''}, ${client?.email ?? ''}`,
+    );
+  }
+}
+
 export function registerInvoiceCommands(rootProgram: Command): void {
   const invoices = rootProgram.command('invoices').description('Manage invoices.');
 
@@ -125,7 +186,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .action(async (id: number) => {
       const runtime = resolveRuntimeContext(invoices);
       const result = await runtime.client.invoices.getById(id);
-      printSuccess(runtime.output, 'invoices.get', result);
+      printInvoiceDetail(runtime.output, result);
     });
 
   invoices
@@ -151,7 +212,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         query.search = options.search;
       }
       const result = await runtime.client.invoices.list(query);
-      printSuccess(runtime.output, 'invoices.list', result);
+      printInvoiceList(runtime.output, result);
     });
 
   invoices

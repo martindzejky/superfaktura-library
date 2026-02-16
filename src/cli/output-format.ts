@@ -22,9 +22,6 @@ export function printSuccess(format: OutputFormat, action: string, result: Resul
   }
 
   console.log('Success');
-  console.log(`Action: ${action}`);
-  console.log(`Status: ${result.statusCode}`);
-  console.log(`Data: ${JSON.stringify(result.data, null, 2)}`);
 }
 
 export function printError(format: OutputFormat, error: unknown): void {

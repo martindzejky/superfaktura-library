@@ -2,7 +2,9 @@ import { Command } from 'commander';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess } from '../output-format';
-import type { ContactPayload, UnknownRecord } from '../../types';
+import type { ContactPayload, Result, UnknownRecord } from '../../types';
+import { toRecord } from '../../utils';
+import type { OutputFormat } from '../types';
 
 interface ContactOptions {
   data?: string;
@@ -28,6 +30,46 @@ function buildContactPayloadFromFlags(options: ContactOptions, requireName: bool
   }
 
   return payload as unknown as ContactPayload;
+}
+
+function printContactDetail(output: OutputFormat, result: Result<UnknownRecord>): void {
+  if (output === 'json') {
+    printSuccess(output, 'contacts.get', result);
+    return;
+  }
+  const client = toRecord(result.data.Client);
+  if (!client) {
+    console.log('No data.');
+    return;
+  }
+  console.log(`id: ${client.id ?? ''}`);
+  console.log(`name: ${client.name ?? ''}`);
+  console.log(`email: ${client.email ?? ''}`);
+}
+
+function printContactList(output: OutputFormat, result: Result<UnknownRecord>): void {
+  if (output === 'json') {
+    printSuccess(output, 'contacts.list', result);
+    return;
+  }
+  const data = result.data;
+  const items = Array.isArray(data.items) ? data.items : [];
+
+  if (items.length === 0) {
+    console.log('No contacts.');
+    return;
+  }
+
+  const itemCount = data.itemCount ?? items.length;
+  const page = data.page ?? 1;
+  console.log(`${itemCount} items, page ${page}`);
+
+  for (const item of items) {
+    const record = toRecord(item);
+    const client = record ? toRecord(record.Client) : null;
+    if (!client) continue;
+    console.log(`${client.id ?? ''}, ${client.name ?? ''}, ${client.email ?? ''}`);
+  }
 }
 
 export function registerContactCommands(rootProgram: Command): void {
@@ -58,7 +100,7 @@ export function registerContactCommands(rootProgram: Command): void {
     .action(async (id: number) => {
       const runtime = resolveRuntimeContext(contacts);
       const result = await runtime.client.contacts.getById(id);
-      printSuccess(runtime.output, 'contacts.get', result);
+      printContactDetail(runtime.output, result);
     });
 
   contacts
@@ -84,7 +126,7 @@ export function registerContactCommands(rootProgram: Command): void {
         query.search = options.search;
       }
       const result = await runtime.client.contacts.list(query);
-      printSuccess(runtime.output, 'contacts.list', result);
+      printContactList(runtime.output, result);
     });
 
   contacts
