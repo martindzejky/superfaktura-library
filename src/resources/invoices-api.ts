@@ -58,10 +58,7 @@ export class InvoicesApiImpl {
     return this.httpClient.request('DELETE', `/invoices/delete/${id}`);
   }
 
-  pay(
-    id: number,
-    payload: InvoicePaymentPayload = {},
-  ): Promise<Result<UnknownRecord>> {
+  pay(id: number, payload: InvoicePaymentPayload = {}): Promise<Result<UnknownRecord>> {
     const invoicePayment: UnknownRecord = {
       invoice_id: id,
     };
@@ -79,13 +76,9 @@ export class InvoicesApiImpl {
       invoicePayment.payment_type = payload.payment_type;
     }
 
-    return this.httpClient.request(
-      'POST',
-      '/invoice_payments/add/ajax%3A1/api%3A1',
-      {
-        InvoicePayment: invoicePayment,
-      },
-    );
+    return this.httpClient.request('POST', '/invoice_payments/add/ajax%3A1/api%3A1', {
+      InvoicePayment: invoicePayment,
+    });
   }
 
   markAsSent(id: number): Promise<Result<UnknownRecord>> {
@@ -93,9 +86,6 @@ export class InvoicesApiImpl {
   }
 
   downloadPdf(id: number, language = 'sk'): Promise<BinaryResult> {
-    return this.httpClient.requestBinary(
-      'GET',
-      `/${language}/invoices/pdf/${id}`,
-    );
+    return this.httpClient.requestBinary('GET', `/${language}/invoices/pdf/${id}`);
   }
 }
