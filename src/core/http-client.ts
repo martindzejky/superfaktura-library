@@ -39,11 +39,11 @@ export class HttpClient {
         requestInit.body = JSON.stringify(body);
       }
 
-      const response = await fetch(`${this.baseUrl}${path}`, requestInit);
+      const url = `${this.baseUrl}${path}`;
+      const response = await this.fetchWithTimeout(url, requestInit);
 
       const text = await response.text();
-      const parsed: unknown = text.length > 0 ? JSON.parse(text) : {};
-      const data = toRecord(parsed) ?? {};
+      const data = this.parseJsonBody(text, response.status);
 
       if (response.status === 404) {
         throw new NotFoundError();
@@ -76,7 +76,8 @@ export class HttpClient {
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
-      const response = await fetch(`${this.baseUrl}${path}`, {
+      const url = `${this.baseUrl}${path}`;
+      const response = await this.fetchWithTimeout(url, {
         method,
         headers: {
           Authorization: this.authHeader,
@@ -103,6 +104,31 @@ export class HttpClient {
       };
     } finally {
       clearTimeout(timeout);
+    }
+  }
+
+  private async fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+    try {
+      return await fetch(url, init);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error(`Request to ${url} timed out after ${this.timeoutMs}ms.`);
+      }
+      throw error;
+    }
+  }
+
+  private parseJsonBody(text: string, statusCode: number): UnknownRecord {
+    if (text.length === 0) {
+      return {};
+    }
+    try {
+      const parsed: unknown = JSON.parse(text);
+      return toRecord(parsed) ?? {};
+    } catch {
+      throw new HttpError(statusCode, {
+        message: `Expected JSON response but got: ${text.slice(0, 200)}`,
+      });
     }
   }
 }
