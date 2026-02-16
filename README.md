@@ -21,7 +21,9 @@ npm run build
 
 ## Environment variables
 
-The SDK and CLI both support these variables:
+The CLI automatically loads `.env` from the working directory. The SDK reads from `process.env` but does not load `.env` — use your own env loader or pass config directly.
+
+Supported variables:
 
 - `SUPERFAKTURA_API_URL` (default: `https://sandbox.superfaktura.sk`)
 - `SUPERFAKTURA_API_EMAIL`
@@ -59,14 +61,14 @@ const invoice = await client.invoices.create({
     {
       name: 'Consulting',
       quantity: 1,
-      unit_price: 2.50
+      unit_price: 2.5,
       unit: 'h',
     },
   ],
 });
 
 await client.invoices.pay(123, {
-  amount: 2.50,
+  amount: 2.5,
   payment_type: 'transfer',
   date: '2026-02-14',
 });
