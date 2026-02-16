@@ -59,14 +59,14 @@ const invoice = await client.invoices.create({
     {
       name: 'Consulting',
       quantity: 1,
-      unit_price: 100,
+      unit_price: 2.50
       unit: 'h',
     },
   ],
 });
 
 await client.invoices.pay(123, {
-  amount: 100,
+  amount: 2.50,
   payment_type: 'transfer',
   date: '2026-02-14',
 });
