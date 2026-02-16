@@ -37,7 +37,7 @@ import { createClient } from 'superfaktura-library';
 
 const client = createClient({
   // optional when present in env
-  email: process.env.SUPERFAKTURA_API_EMAIL,
+  apiEmail: process.env.SUPERFAKTURA_API_EMAIL,
   apiKey: process.env.SUPERFAKTURA_API_KEY,
 });
 
@@ -131,7 +131,7 @@ npx superfaktura invoices get 123 --output json
 
 Global options:
 
-- `--email`
+- `--api-email`
 - `--api-key`
 - `--company-id`
 - `--base-url`

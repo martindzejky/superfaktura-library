@@ -8,7 +8,7 @@ export interface CliContext {
 
 export interface GlobalCliOptions {
   output?: OutputFormat;
-  email?: string;
+  apiEmail?: string;
   apiKey?: string;
   companyId?: number;
   baseUrl?: string;

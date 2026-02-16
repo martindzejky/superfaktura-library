@@ -23,7 +23,7 @@ export async function runCli(argv: string[] = process.argv): Promise<void> {
     .version(__PACKAGE_VERSION__, '-v, --version')
     .description('Simple CLI for SuperFaktura contacts and invoices.')
     .option( '--output <format>', 'Output format: text or json', parseOutputFormat, 'text',)
-    .option('--email <email>', 'API email')
+    .option('--api-email <email>', 'API email')
     .option('--api-key <key>', 'API key')
     .option('--company-id <number>', 'Company ID', Number)
     .option('--base-url <url>', 'SuperFaktura API URL', DEFAULT_BASE_URL);

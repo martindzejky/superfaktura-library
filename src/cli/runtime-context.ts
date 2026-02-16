@@ -9,8 +9,8 @@ export function resolveRuntimeContext(command: Command): RuntimeContext {
 
   const clientOptions: ClientConfig = {};
 
-  if (options.email) {
-    clientOptions.email = options.email;
+  if (options.apiEmail) {
+    clientOptions.apiEmail = options.apiEmail;
   }
   if (options.apiKey) {
     clientOptions.apiKey = options.apiKey;

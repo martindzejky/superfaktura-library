@@ -23,7 +23,7 @@ export type InvoiceContactDataSource = 'empty' | 'merge' | 'addressbook';
 
 export interface ClientConfig {
   baseUrl?: string;
-  email?: string;
+  apiEmail?: string;
   apiKey?: string;
   companyId?: number;
   timeoutMs?: number;

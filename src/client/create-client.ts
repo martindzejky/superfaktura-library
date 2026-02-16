@@ -12,14 +12,14 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 export function createClient(config: ClientConfig = {}) {
   loadDotEnv({ quiet: true });
 
-  const email = config.email ?? process.env.SUPERFAKTURA_API_EMAIL;
+  const apiEmail = config.apiEmail ?? process.env.SUPERFAKTURA_API_EMAIL;
   const apiKey = config.apiKey ?? process.env.SUPERFAKTURA_API_KEY;
   const baseUrl = config.baseUrl ?? process.env.SUPERFAKTURA_API_URL ?? DEFAULT_BASE_URL;
   const companyId = parseCompanyId(config.companyId ?? process.env.SUPERFAKTURA_API_COMPANY_ID);
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-  if (!email) {
-    throw new Error('Missing email. Provide config.email or SUPERFAKTURA_API_EMAIL.');
+  if (!apiEmail) {
+    throw new Error('Missing API email. Provide config.apiEmail or SUPERFAKTURA_API_EMAIL.');
   }
 
   if (!apiKey) {
@@ -27,7 +27,7 @@ export function createClient(config: ClientConfig = {}) {
   }
 
   const authHeader = createAuthHeader({
-    email,
+    apiEmail,
     apiKey,
     ...(companyId !== undefined ? { companyId } : {}),
   });

@@ -1,14 +1,14 @@
 import { DEFAULT_MODULE_NAME } from './constants';
 
 interface AuthHeaderInput {
-  email: string;
+  apiEmail: string;
   apiKey: string;
   companyId?: number;
 }
 
 export function createAuthHeader(input: AuthHeaderInput): string {
   const params = new URLSearchParams({
-    email: input.email,
+    email: input.apiEmail,
     apikey: input.apiKey,
     module: DEFAULT_MODULE_NAME,
   });
