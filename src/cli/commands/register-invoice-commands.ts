@@ -3,8 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess } from '../output-format';
-import type { InvoicePaymentPayload } from '../../types';
-import { toInvoiceCreatePayload, toInvoicePaymentPayload, toInvoiceUpdatePayload } from '../../utils';
+import type { InvoiceCreatePayload, InvoicePaymentPayload, InvoiceUpdatePayload } from '../../types';
 
 export function registerInvoiceCommands(rootProgram: Command): void {
   const invoices = rootProgram.command('invoices').description('Manage invoices.');
@@ -16,7 +15,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .action(async (options: { data: string }) => {
       const runtime = resolveRuntimeContext(invoices);
       const payload = await parseDataInput(options.data);
-      const result = await runtime.client.invoices.create(toInvoiceCreatePayload(payload));
+      const result = await runtime.client.invoices.create(payload as unknown as InvoiceCreatePayload);
       printSuccess(runtime.output, 'invoices.create', result);
     });
 
@@ -64,7 +63,10 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .action(async (id: number, options: { data: string }) => {
       const runtime = resolveRuntimeContext(invoices);
       const payload = await parseDataInput(options.data);
-      const result = await runtime.client.invoices.update(toInvoiceUpdatePayload(id, payload));
+      const result = await runtime.client.invoices.update({
+        ...(payload as unknown as InvoiceUpdatePayload),
+        id,
+      });
       printSuccess(runtime.output, 'invoices.update', result);
     });
 
@@ -111,7 +113,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       let paymentPayload: InvoicePaymentPayload | undefined;
       if (options.data !== undefined) {
         const payload = await parseDataInput(options.data);
-        paymentPayload = toInvoicePaymentPayload(payload);
+        paymentPayload = payload as unknown as InvoicePaymentPayload;
       }
       const result = await runtime.client.invoices.pay(id, paymentPayload);
       printSuccess(runtime.output, 'invoices.pay', result);

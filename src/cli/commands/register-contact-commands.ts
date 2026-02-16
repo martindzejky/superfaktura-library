@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess } from '../output-format';
-import { toContactPayload } from '../../utils';
+import type { ContactPayload } from '../../types';
 
 export function registerContactCommands(rootProgram: Command): void {
   const contacts = rootProgram.command('contacts').description('Manage contacts.');
@@ -14,7 +14,7 @@ export function registerContactCommands(rootProgram: Command): void {
     .action(async (options: { data: string }) => {
       const runtime = resolveRuntimeContext(contacts);
       const payload = await parseDataInput(options.data);
-      const result = await runtime.client.contacts.create(toContactPayload(payload));
+      const result = await runtime.client.contacts.create(payload as unknown as ContactPayload);
       printSuccess(runtime.output, 'contacts.create', result);
     });
 
@@ -62,7 +62,7 @@ export function registerContactCommands(rootProgram: Command): void {
     .action(async (id: number, options: { data: string }) => {
       const runtime = resolveRuntimeContext(contacts);
       const payload = await parseDataInput(options.data);
-      const result = await runtime.client.contacts.update(id, toContactPayload(payload));
+      const result = await runtime.client.contacts.update(id, payload as unknown as ContactPayload);
       printSuccess(runtime.output, 'contacts.update', result);
     });
 

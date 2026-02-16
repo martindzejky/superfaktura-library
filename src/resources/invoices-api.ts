@@ -22,10 +22,6 @@ export class InvoicesApiImpl {
       Invoice: payload.invoice ?? {},
       InvoiceItem: payload.items,
       Client: payload.contact,
-      InvoiceSetting: payload.settings ?? {},
-      InvoiceExtra: payload.extra ?? {},
-      MyData: payload.myData ?? {},
-      Tag: payload.tags && payload.tags.length > 0 ? { Tag: payload.tags } : {},
     });
   }
 
@@ -47,10 +43,6 @@ export class InvoicesApiImpl {
       },
       InvoiceItem: payload.items ?? [],
       Client: payload.contact ?? {},
-      InvoiceSetting: payload.settings ?? {},
-      InvoiceExtra: payload.extra ?? {},
-      MyData: payload.myData ?? {},
-      Tag: payload.tags && payload.tags.length > 0 ? { Tag: payload.tags } : {},
     });
   }
 
