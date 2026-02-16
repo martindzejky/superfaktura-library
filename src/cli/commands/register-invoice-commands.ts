@@ -194,7 +194,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .description('Download invoice PDF.')
     .argument('<id>', 'Invoice ID', Number)
     .option('--path <file>', 'Output PDF path')
-    .option('--language <code>', 'PDF language code', 'sk')
+    .option('--language <code>', 'PDF language code (slo, cze, eng, ...)', 'slo')
     .action(async (id: number, options: { path?: string; language: string }) => {
       const runtime = resolveRuntimeContext(invoices);
       const pdf = await runtime.client.invoices.downloadPdf(id, options.language);

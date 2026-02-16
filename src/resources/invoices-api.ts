@@ -77,7 +77,7 @@ export class InvoicesApiImpl {
     return this.httpClient.request('GET', `/invoices/mark_sent/${id}`);
   }
 
-  downloadPdf(id: number, language = 'sk'): Promise<BinaryResult> {
+  downloadPdf(id: number, language = 'slo'): Promise<BinaryResult> {
     return this.httpClient.requestBinary('GET', `/${language}/invoices/pdf/${id}`);
   }
 }
