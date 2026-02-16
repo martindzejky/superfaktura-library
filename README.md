@@ -87,9 +87,27 @@ npx superfaktura contacts list
 Examples:
 
 ```bash
+# Create contact with simple flags
+npx superfaktura contacts create --name "ACME s.r.o." --email "billing@acme.test"
+
 # Create contact from inline JSON
 npx superfaktura contacts create \
   --data '{"name":"ACME s.r.o.","email":"billing@acme.test"}'
+
+# Update contact with simple flags
+npx superfaktura contacts update 123 --email "new-email@acme.test"
+
+# Create invoice with simple flags (price + contact via ID)
+npx superfaktura invoices create --price 120 --contact-id 123
+
+# Create invoice with simple flags (price + contact name/email)
+npx superfaktura invoices create \
+  --price 120 \
+  --contact-name "ACME s.r.o." \
+  --contact-email "billing@acme.test"
+
+# Update invoice with simple flags (replaces items with one unit_price item)
+npx superfaktura invoices update 123 --price 150
 
 # Create invoice from file
 npx superfaktura invoices create --data @./invoice-create.json

@@ -2,7 +2,33 @@ import { Command } from 'commander';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess } from '../output-format';
-import type { ContactPayload } from '../../types';
+import type { ContactPayload, UnknownRecord } from '../../types';
+
+interface ContactOptions {
+  data?: string;
+  name?: string;
+  email?: string;
+}
+
+function buildContactPayloadFromFlags(options: ContactOptions, requireName: boolean): ContactPayload {
+  if (requireName && (options.name === undefined || options.name.trim() === '')) {
+    throw new Error('Provide --name or use --data for contact payload.');
+  }
+
+  const payload: UnknownRecord = {};
+  if (options.name !== undefined) {
+    payload.name = options.name;
+  }
+  if (options.email !== undefined) {
+    payload.email = options.email;
+  }
+
+  if (Object.keys(payload).length === 0) {
+    throw new Error('Provide --data or at least one flag: --name, --email.');
+  }
+
+  return payload as unknown as ContactPayload;
+}
 
 export function registerContactCommands(rootProgram: Command): void {
   const contacts = rootProgram.command('contacts').description('Manage contacts.');
@@ -10,11 +36,18 @@ export function registerContactCommands(rootProgram: Command): void {
   contacts
     .command('create')
     .description('Create a contact.')
-    .requiredOption('--data <json>', 'JSON object or @path/to/file.json')
-    .action(async (options: { data: string }) => {
+    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--name <name>', 'Contact name')
+    .option('--email <email>', 'Contact email')
+    .action(async (options: ContactOptions) => {
       const runtime = resolveRuntimeContext(contacts);
-      const payload = await parseDataInput(options.data);
-      const result = await runtime.client.contacts.create(payload as unknown as ContactPayload);
+      let payload: ContactPayload;
+      if (options.data !== undefined) {
+        payload = (await parseDataInput(options.data)) as unknown as ContactPayload;
+      } else {
+        payload = buildContactPayloadFromFlags(options, true);
+      }
+      const result = await runtime.client.contacts.create(payload);
       printSuccess(runtime.output, 'contacts.create', result);
     });
 
@@ -58,11 +91,18 @@ export function registerContactCommands(rootProgram: Command): void {
     .command('update')
     .description('Update a contact by ID.')
     .argument('<id>', 'Contact ID', Number)
-    .requiredOption('--data <json>', 'JSON object or @path/to/file.json')
-    .action(async (id: number, options: { data: string }) => {
+    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--name <name>', 'Contact name')
+    .option('--email <email>', 'Contact email')
+    .action(async (id: number, options: ContactOptions) => {
       const runtime = resolveRuntimeContext(contacts);
-      const payload = await parseDataInput(options.data);
-      const result = await runtime.client.contacts.update(id, payload as unknown as ContactPayload);
+      let payload: ContactPayload;
+      if (options.data !== undefined) {
+        payload = (await parseDataInput(options.data)) as unknown as ContactPayload;
+      } else {
+        payload = buildContactPayloadFromFlags(options, false);
+      }
+      const result = await runtime.client.contacts.update(id, payload);
       printSuccess(runtime.output, 'contacts.update', result);
     });
 

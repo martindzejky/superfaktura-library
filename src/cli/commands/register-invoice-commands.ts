@@ -3,7 +3,96 @@ import { writeFile } from 'node:fs/promises';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess } from '../output-format';
-import type { InvoiceCreatePayload, InvoicePaymentPayload, InvoiceUpdatePayload } from '../../types';
+import type { InvoiceCreatePayload, InvoicePaymentPayload, InvoiceUpdatePayload, UnknownRecord } from '../../types';
+
+interface InvoiceOptions {
+  data?: string;
+  name?: string;
+  price?: number;
+  contactId?: number;
+  contactName?: string;
+  contactEmail?: string;
+}
+
+function buildInvoiceContactFromFlags(options: InvoiceOptions, requireContact: boolean): UnknownRecord | undefined {
+  const hasContactId = options.contactId !== undefined;
+  const hasContactName = options.contactName !== undefined;
+  const hasContactEmail = options.contactEmail !== undefined;
+  const hasAnyContactFlag = hasContactId || hasContactName || hasContactEmail;
+
+  if (!hasAnyContactFlag) {
+    if (requireContact) {
+      throw new Error('Provide --contact-id or --contact-name or --contact-email, or use --data.');
+    }
+    return undefined;
+  }
+
+  if (hasContactId) {
+    return { id: options.contactId };
+  }
+
+  const contactPayload: UnknownRecord = {};
+
+  if (options.contactName !== undefined) {
+    contactPayload.name = options.contactName;
+  }
+  if (options.contactEmail !== undefined) {
+    contactPayload.email = options.contactEmail;
+  }
+
+  return contactPayload;
+}
+
+function buildInvoiceCreatePayloadFromFlags(options: InvoiceOptions): InvoiceCreatePayload {
+  if (options.price === undefined) {
+    throw new Error('Provide --price or use --data for invoice create.');
+  }
+
+  const contact = buildInvoiceContactFromFlags(options, true);
+  if (contact === undefined) {
+    throw new Error('Missing contact data.');
+  }
+
+  const payload: UnknownRecord = {
+    contact,
+    items: [{ unit_price: options.price }],
+  };
+
+  if (options.name !== undefined) {
+    payload.invoice = {
+      name: options.name,
+    };
+  }
+
+  return payload as unknown as InvoiceCreatePayload;
+}
+
+function buildInvoiceUpdatePayloadFromFlags(id: number, options: InvoiceOptions): InvoiceUpdatePayload {
+  const payload: UnknownRecord = { id };
+
+  if (options.name !== undefined) {
+    payload.invoice = {
+      name: options.name,
+    };
+  }
+
+  if (options.price !== undefined) {
+    payload.items = [{ unit_price: options.price }];
+  }
+
+  const contact = buildInvoiceContactFromFlags(options, false);
+  if (contact !== undefined) {
+    payload.contact = contact;
+  }
+
+  if (Object.keys(payload).length === 1) {
+    throw new Error(
+      'Provide --data or at least one flag: --name, --price, --contact-id, --contact-name, --contact-email.',
+    );
+  }
+
+  return payload as unknown as InvoiceUpdatePayload;
+}
 
 export function registerInvoiceCommands(rootProgram: Command): void {
   const invoices = rootProgram.command('invoices').description('Manage invoices.');
@@ -11,11 +100,21 @@ export function registerInvoiceCommands(rootProgram: Command): void {
   invoices
     .command('create')
     .description('Create an invoice.')
-    .requiredOption('--data <json>', 'JSON object or @path/to/file.json')
-    .action(async (options: { data: string }) => {
+    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--name <text>', 'Invoice name')
+    .option('--price <number>', 'Invoice total price', Number)
+    .option('--contact-id <id>', 'Contact ID', Number)
+    .option('--contact-name <name>', 'Contact name')
+    .option('--contact-email <email>', 'Contact email')
+    .action(async (options: InvoiceOptions) => {
       const runtime = resolveRuntimeContext(invoices);
-      const payload = await parseDataInput(options.data);
-      const result = await runtime.client.invoices.create(payload as unknown as InvoiceCreatePayload);
+      let payload: InvoiceCreatePayload;
+      if (options.data !== undefined) {
+        payload = (await parseDataInput(options.data)) as unknown as InvoiceCreatePayload;
+      } else {
+        payload = buildInvoiceCreatePayloadFromFlags(options);
+      }
+      const result = await runtime.client.invoices.create(payload);
       printSuccess(runtime.output, 'invoices.create', result);
     });
 
@@ -59,14 +158,24 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .command('update')
     .description('Update an invoice by ID.')
     .argument('<id>', 'Invoice ID', Number)
-    .requiredOption('--data <json>', 'JSON object or @path/to/file.json')
-    .action(async (id: number, options: { data: string }) => {
+    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--name <text>', 'Invoice name')
+    .option('--price <number>', 'Invoice total price', Number)
+    .option('--contact-id <id>', 'Contact ID', Number)
+    .option('--contact-name <name>', 'Contact name')
+    .option('--contact-email <email>', 'Contact email')
+    .action(async (id: number, options: InvoiceOptions) => {
       const runtime = resolveRuntimeContext(invoices);
-      const payload = await parseDataInput(options.data);
-      const result = await runtime.client.invoices.update({
-        ...(payload as unknown as InvoiceUpdatePayload),
-        id,
-      });
+      let payload: InvoiceUpdatePayload;
+      if (options.data !== undefined) {
+        payload = {
+          ...((await parseDataInput(options.data)) as unknown as InvoiceUpdatePayload),
+          id,
+        };
+      } else {
+        payload = buildInvoiceUpdatePayloadFromFlags(id, options);
+      }
+      const result = await runtime.client.invoices.update(payload);
       printSuccess(runtime.output, 'invoices.update', result);
     });
 
