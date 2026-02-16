@@ -10,11 +10,9 @@ export function printSuccess(format: OutputFormat, action: string, result: Resul
       JSON.stringify(
         {
           ok: true,
+          status: result.statusCode,
           action,
           data: result.data,
-          meta: {
-            statusCode: result.statusCode,
-          },
         },
         null,
         2,
@@ -48,9 +46,9 @@ export function printError(format: OutputFormat, error: unknown): void {
       JSON.stringify(
         {
           ok: false,
+          ...(statusCode !== undefined ? { status: statusCode } : {}),
           error: {
             message,
-            ...(statusCode !== undefined ? { statusCode } : {}),
             ...(apiMessagesWithoutDetails.length > 0 ? { apiMessages: apiMessagesWithoutDetails } : {}),
             ...(hasValidationDetails && uniqueValidationDetails ? { details: uniqueValidationDetails } : {}),
             ...(errorData !== undefined ? { data: errorData } : {}),
