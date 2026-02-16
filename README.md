@@ -47,8 +47,22 @@ const created = await client.contacts.create({
 });
 
 const invoice = await client.invoices.create({
-  contact: { name: 'ACME s.r.o.' },
-  items: [{ name: 'Consulting', quantity: 1, unit_price: 100, tax: 20 }],
+  contact: {
+    name: 'ACME s.r.o.',
+    email: 'billing@acme.test',
+  },
+  invoice: {
+    name: 'Invoice 2026-001',
+    invoice_currency: 'EUR',
+  },
+  items: [
+    {
+      name: 'Consulting',
+      quantity: 1,
+      unit_price: 100,
+      unit: 'h',
+    },
+  ],
 });
 
 await client.invoices.pay(123, {
@@ -79,6 +93,9 @@ npx superfaktura contacts create \
 
 # Create invoice from file
 npx superfaktura invoices create --data @./invoice-create.json
+
+# Update invoice by ID from file
+npx superfaktura invoices update 123 --data @./invoice-update.json
 
 # Download invoice PDF
 npx superfaktura invoices pdf 123 --path ./invoice-123.pdf
