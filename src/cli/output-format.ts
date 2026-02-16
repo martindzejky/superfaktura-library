@@ -1,4 +1,3 @@
-import pc from 'picocolors';
 import { isError } from 'lodash-es';
 import { ApiError, HttpError, ValidationError } from '../errors';
 import type { Result } from '../types';
@@ -24,10 +23,10 @@ export function printSuccess(format: OutputFormat, action: string, result: Resul
     return;
   }
 
-  console.log(pc.green('Success'));
-  console.log(`${pc.bold('Action:')} ${action}`);
-  console.log(`${pc.bold('Status:')} ${result.statusCode}`);
-  console.log(`${pc.bold('Data:')} ${JSON.stringify(result.data, null, 2)}`);
+  console.log('Success');
+  console.log(`Action: ${action}`);
+  console.log(`Status: ${result.statusCode}`);
+  console.log(`Data: ${JSON.stringify(result.data, null, 2)}`);
 }
 
 export function printError(format: OutputFormat, error: unknown): void {
@@ -64,23 +63,23 @@ export function printError(format: OutputFormat, error: unknown): void {
     return;
   }
 
-  console.error(pc.red('Error'));
+  console.error('Error');
   console.error(message);
   if (statusCode !== undefined) {
-    console.error(`${pc.bold('Status:')} ${statusCode}`);
+    console.error(`Status: ${statusCode}`);
   }
   if (apiMessagesWithoutDetails.length > 0) {
     for (const apiMessage of apiMessagesWithoutDetails) {
-      console.error(`${pc.bold('API:')} ${apiMessage}`);
+      console.error(`API: ${apiMessage}`);
     }
   }
   if (hasValidationDetails && uniqueValidationDetails !== undefined) {
     for (const detail of uniqueValidationDetails) {
-      console.error(`${pc.bold('Detail:')} ${detail}`);
+      console.error(`Detail: ${detail}`);
     }
   }
   if (payloadForDisplay !== undefined) {
-    console.error(`${pc.bold('Data:')} ${payloadForDisplay}`);
+    console.error(`Data: ${payloadForDisplay}`);
   }
 }
 

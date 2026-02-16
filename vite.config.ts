@@ -8,7 +8,6 @@ const externalModules = new Set([
   ...builtinModules.map((moduleName) => `node:${moduleName}`),
   'commander',
   'dotenv',
-  'picocolors',
 ]);
 
 export default defineConfig({
