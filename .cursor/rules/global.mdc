@@ -1,0 +1,36 @@
+---
+description: Global rules and information
+alwaysApply: true
+---
+
+# Superfaktura Project Basics
+
+## Project Purpose
+
+- This repo is a Node.js TypeScript package named `superfaktura-library`.
+- It provides both:
+  - an importable SDK for SuperFaktura API
+  - a CLI tool `superfaktura`
+- Current feature scope: contacts + invoices, including invoice PDF download.
+
+## API and Domain Conventions
+
+- Public naming uses `contacts`, but API endpoints map to SuperFaktura `clients/*`.
+- Auth module value is hardcoded to `superfaktura-library`.
+- Default API URL is sandbox (`https://sandbox.superfaktura.sk`) unless overridden.
+- Do not add rate-limit data to public SDK output unless explicitly requested.
+
+## Build and Runtime Conventions
+
+- Keep setup minimal and modern:
+  - ESM-only package
+  - Node `>=22`
+- Keep CLI IDs positional for commands that require ID input.
+
+## Coding Style
+
+- Prefer simple, boring implementations over abstractions.
+- Keep configuration and scripts minimal.
+- Use dash-case filenames.
+- Keep text mode and JSON mode behavior stable unless user asks to change.
+- Prefer manual verification flows in this repo unless tests are explicitly requested.
