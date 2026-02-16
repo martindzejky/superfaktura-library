@@ -1,6 +1,13 @@
 import { HttpClient } from '../core/http-client';
 import { toNamedQueryPath } from '../core/query-path';
-import type { BinaryResult, InvoiceCreatePayload, InvoiceUpdatePayload, ListQuery, Result } from '../types';
+import type {
+  BinaryResult,
+  InvoiceCreatePayload,
+  InvoiceUpdatePayload,
+  ListQuery,
+  Result,
+  UnknownRecord,
+} from '../types';
 
 export class InvoicesApiImpl {
   private readonly httpClient: HttpClient;
@@ -9,7 +16,7 @@ export class InvoicesApiImpl {
     this.httpClient = httpClient;
   }
 
-  create(payload: InvoiceCreatePayload): Promise<Result<Record<string, unknown>>> {
+  create(payload: InvoiceCreatePayload): Promise<Result<UnknownRecord>> {
     return this.httpClient.request('POST', '/invoices/create', {
       Invoice: payload.invoice ?? {},
       InvoiceItem: payload.items,
@@ -21,17 +28,17 @@ export class InvoicesApiImpl {
     });
   }
 
-  getById(id: number): Promise<Result<Record<string, unknown>>> {
+  getById(id: number): Promise<Result<UnknownRecord>> {
     return this.httpClient.request('GET', `/invoices/view/${id}.json`);
   }
 
-  list(query: ListQuery = {}): Promise<Result<Record<string, unknown>>> {
+  list(query: ListQuery = {}): Promise<Result<UnknownRecord>> {
     const namedQuery = toNamedQueryPath(query);
     const suffix = namedQuery.length > 0 ? `/${namedQuery}` : '';
     return this.httpClient.request('GET', `/invoices/index.json${suffix}`);
   }
 
-  update(payload: InvoiceUpdatePayload): Promise<Result<Record<string, unknown>>> {
+  update(payload: InvoiceUpdatePayload): Promise<Result<UnknownRecord>> {
     return this.httpClient.request('POST', '/invoices/edit', {
       Invoice: {
         id: payload.id,
@@ -46,11 +53,14 @@ export class InvoicesApiImpl {
     });
   }
 
-  remove(id: number): Promise<Result<Record<string, unknown>>> {
+  remove(id: number): Promise<Result<UnknownRecord>> {
     return this.httpClient.request('DELETE', `/invoices/delete/${id}`);
   }
 
   downloadPdf(id: number, language = 'sk'): Promise<BinaryResult> {
-    return this.httpClient.requestBinary('GET', `/${language}/invoices/pdf/${id}`);
+    return this.httpClient.requestBinary(
+      'GET',
+      `/${language}/invoices/pdf/${id}`,
+    );
   }
 }

@@ -1,24 +1,44 @@
-import { isArray, isBoolean, isNull, isNumber, isPlainObject, isString } from 'lodash-es';
-import type { ContactPayload, InvoiceCreatePayload, InvoiceItemPayload, InvoiceUpdatePayload } from './types';
-
-type ScalarValue = string | number | boolean | null | undefined;
+import {
+  isArray,
+  isBoolean,
+  isNull,
+  isNumber,
+  isPlainObject,
+  isString,
+} from 'lodash-es';
+import type {
+  ContactPayload,
+  InvoiceCreatePayload,
+  InvoiceItemPayload,
+  InvoiceUpdatePayload,
+  ScalarValue,
+  UnknownRecord,
+} from './types';
 
 function isScalarValue(value: unknown): value is ScalarValue {
-  return value === undefined || isString(value) || isNumber(value) || isBoolean(value) || isNull(value);
+  return (
+    value === undefined ||
+    isString(value) ||
+    isNumber(value) ||
+    isBoolean(value) ||
+    isNull(value)
+  );
 }
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is UnknownRecord {
   return isPlainObject(value);
 }
 
-export function toRecord(value: unknown): Record<string, unknown> | null {
+export function toRecord(value: unknown): UnknownRecord | null {
   if (!isRecord(value)) {
     return null;
   }
   return value;
 }
 
-export function parseCompanyId(value: string | number | undefined): number | undefined {
+export function parseCompanyId(
+  value: string | number | undefined,
+): number | undefined {
   if (value === undefined) {
     return undefined;
   }
@@ -44,7 +64,7 @@ export function normalizeErrorMessages(errorMessage: unknown): string[] {
   return [];
 }
 
-export function toContactPayload(value: Record<string, unknown>): ContactPayload {
+export function toContactPayload(value: UnknownRecord): ContactPayload {
   if (!isRecord(value)) {
     throw new Error('Contact payload must be an object.');
   }
@@ -92,7 +112,10 @@ function toInvoiceContactPayload(value: unknown): ContactPayload {
   };
 }
 
-function toInvoiceItemPayload(item: unknown, index: number): InvoiceItemPayload {
+function toInvoiceItemPayload(
+  item: unknown,
+  index: number,
+): InvoiceItemPayload {
   if (!isRecord(item)) {
     throw new Error(`Invoice item at index ${index} must be an object.`);
   }
@@ -108,7 +131,10 @@ function toInvoiceItemPayload(item: unknown, index: number): InvoiceItemPayload 
   return Object.fromEntries(entries);
 }
 
-function toOptionalRecord(value: unknown, fieldName: string): Record<string, unknown> | undefined {
+function toOptionalRecord(
+  value: unknown,
+  fieldName: string,
+): UnknownRecord | undefined {
   if (value === undefined) {
     return undefined;
   }
@@ -128,14 +154,18 @@ function toOptionalTags(value: unknown): number[] | undefined {
   return value;
 }
 
-export function toInvoiceCreatePayload(value: Record<string, unknown>): InvoiceCreatePayload {
+export function toInvoiceCreatePayload(
+  value: UnknownRecord,
+): InvoiceCreatePayload {
   const rawItems = value.items;
   if (!isArray(rawItems) || rawItems.length === 0) {
     throw new Error('Invoice payload must include non-empty items array.');
   }
 
   const contact = toInvoiceContactPayload(value.contact);
-  const items = rawItems.map((item, index) => toInvoiceItemPayload(item, index));
+  const items = rawItems.map((item, index) =>
+    toInvoiceItemPayload(item, index),
+  );
 
   const payload: InvoiceCreatePayload = {
     contact,
@@ -166,7 +196,10 @@ export function toInvoiceCreatePayload(value: Record<string, unknown>): InvoiceC
   return payload;
 }
 
-export function toInvoiceUpdatePayload(id: number, value: Record<string, unknown>): InvoiceUpdatePayload {
+export function toInvoiceUpdatePayload(
+  id: number,
+  value: UnknownRecord,
+): InvoiceUpdatePayload {
   const payload: InvoiceUpdatePayload = { id };
 
   if (value.contact !== undefined) {
@@ -176,7 +209,9 @@ export function toInvoiceUpdatePayload(id: number, value: Record<string, unknown
     if (!isArray(value.items)) {
       throw new Error('"items" must be an array when provided.');
     }
-    payload.items = value.items.map((item, index) => toInvoiceItemPayload(item, index));
+    payload.items = value.items.map((item, index) =>
+      toInvoiceItemPayload(item, index),
+    );
   }
 
   const invoice = toOptionalRecord(value.invoice, 'invoice');

@@ -9,4 +9,6 @@ export type {
   InvoiceUpdatePayload,
   ListQuery,
   Result,
+  ScalarValue,
+  UnknownRecord,
 } from './types';

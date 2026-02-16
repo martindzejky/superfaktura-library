@@ -1,3 +1,7 @@
+export type UnknownRecord = Record<string, unknown>;
+
+export type ScalarValue = string | number | boolean | null | undefined;
+
 export interface ClientConfig {
   baseUrl?: string;
   email?: string;
@@ -25,7 +29,7 @@ export interface ListQuery {
 
 export interface ContactPayload {
   name: string;
-  [key: string]: string | number | boolean | null | undefined;
+  [key: string]: ScalarValue;
 }
 
 export interface InvoiceItemPayload {
@@ -34,26 +38,26 @@ export interface InvoiceItemPayload {
   quantity?: number;
   tax?: number;
   description?: string;
-  [key: string]: string | number | boolean | null | undefined;
+  [key: string]: ScalarValue;
 }
 
 export interface InvoiceCreatePayload {
-  invoice?: Record<string, unknown>;
+  invoice?: UnknownRecord;
   items: InvoiceItemPayload[];
   contact: ContactPayload;
-  settings?: Record<string, unknown>;
-  extra?: Record<string, unknown>;
-  myData?: Record<string, unknown>;
+  settings?: UnknownRecord;
+  extra?: UnknownRecord;
+  myData?: UnknownRecord;
   tags?: number[];
 }
 
 export interface InvoiceUpdatePayload {
   id: number;
-  invoice?: Record<string, unknown>;
+  invoice?: UnknownRecord;
   items?: InvoiceItemPayload[];
   contact?: ContactPayload;
-  settings?: Record<string, unknown>;
-  extra?: Record<string, unknown>;
-  myData?: Record<string, unknown>;
+  settings?: UnknownRecord;
+  extra?: UnknownRecord;
+  myData?: UnknownRecord;
   tags?: number[];
 }

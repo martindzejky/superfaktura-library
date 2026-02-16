@@ -1,5 +1,5 @@
 import { ApiError, HttpError, NotFoundError, ValidationError } from '../errors';
-import type { BinaryResult, Result } from '../types';
+import type { BinaryResult, Result, UnknownRecord } from '../types';
 import { normalizeErrorMessages, toRecord } from '../utils';
 
 interface HttpClientConfig {
@@ -24,8 +24,8 @@ export class HttpClient {
   async request(
     method: HttpMethod,
     path: string,
-    body?: Record<string, unknown>,
-  ): Promise<Result<Record<string, unknown>>> {
+    body?: UnknownRecord,
+  ): Promise<Result<UnknownRecord>> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 

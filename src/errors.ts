@@ -1,3 +1,5 @@
+import type { UnknownRecord } from './types';
+
 export class HttpError extends Error {
   readonly statusCode: number;
   readonly data: unknown;
@@ -12,9 +14,9 @@ export class HttpError extends Error {
 
 export class ApiError extends Error {
   readonly statusCode: number;
-  readonly data: Record<string, unknown>;
+  readonly data: UnknownRecord;
 
-  constructor(statusCode: number, data: Record<string, unknown>) {
+  constructor(statusCode: number, data: UnknownRecord) {
     super('SuperFaktura API returned an error response.');
     this.name = 'ApiError';
     this.statusCode = statusCode;
@@ -25,7 +27,7 @@ export class ApiError extends Error {
 export class ValidationError extends ApiError {
   readonly details: string[];
 
-  constructor(statusCode: number, data: Record<string, unknown>, details: string[]) {
+  constructor(statusCode: number, data: UnknownRecord, details: string[]) {
     super(statusCode, data);
     this.name = 'ValidationError';
     this.details = details;
