@@ -102,6 +102,17 @@ function buildInvoiceUpdatePayloadFromFlags(id: number, options: InvoiceOptions)
   return payload as unknown as InvoiceUpdatePayload;
 }
 
+function printInvoiceMutation(output: OutputFormat, action: string, verb: string, result: Result<UnknownRecord>): void {
+  if (output === 'json') {
+    printSuccess(output, action, result);
+    return;
+  }
+  const nested = toRecord(result.data.data);
+  const invoice = nested ? toRecord(nested.Invoice) : toRecord(result.data.Invoice);
+  const id = invoice?.id ?? 'unknown';
+  console.log(`${verb} invoice with id ${id}.`);
+}
+
 function printInvoiceDetail(output: OutputFormat, result: Result<UnknownRecord>): void {
   if (output === 'json') {
     printSuccess(output, 'invoices.get', result);
@@ -176,7 +187,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         payload = buildInvoiceCreatePayloadFromFlags(options);
       }
       const result = await runtime.client.invoices.create(payload);
-      printSuccess(runtime.output, 'invoices.create', result);
+      printInvoiceMutation(runtime.output, 'invoices.create', 'Created', result);
     });
 
   invoices
@@ -237,7 +248,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         payload = buildInvoiceUpdatePayloadFromFlags(id, options);
       }
       const result = await runtime.client.invoices.update(payload);
-      printSuccess(runtime.output, 'invoices.update', result);
+      printInvoiceMutation(runtime.output, 'invoices.update', 'Updated', result);
     });
 
   invoices

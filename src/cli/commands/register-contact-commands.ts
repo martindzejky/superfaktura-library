@@ -32,6 +32,17 @@ function buildContactPayloadFromFlags(options: ContactOptions, requireName: bool
   return payload as unknown as ContactPayload;
 }
 
+function printContactMutation(output: OutputFormat, action: string, verb: string, result: Result<UnknownRecord>): void {
+  if (output === 'json') {
+    printSuccess(output, action, result);
+    return;
+  }
+  const nested = toRecord(result.data.data);
+  const client = nested ? toRecord(nested.Client) : toRecord(result.data.Client);
+  const id = client?.id ?? 'unknown';
+  console.log(`${verb} contact with id ${id}.`);
+}
+
 function printContactDetail(output: OutputFormat, result: Result<UnknownRecord>): void {
   if (output === 'json') {
     printSuccess(output, 'contacts.get', result);
@@ -90,7 +101,7 @@ export function registerContactCommands(rootProgram: Command): void {
         payload = buildContactPayloadFromFlags(options, true);
       }
       const result = await runtime.client.contacts.create(payload);
-      printSuccess(runtime.output, 'contacts.create', result);
+      printContactMutation(runtime.output, 'contacts.create', 'Created', result);
     });
 
   contacts
@@ -145,7 +156,7 @@ export function registerContactCommands(rootProgram: Command): void {
         payload = buildContactPayloadFromFlags(options, false);
       }
       const result = await runtime.client.contacts.update(id, payload);
-      printSuccess(runtime.output, 'contacts.update', result);
+      printContactMutation(runtime.output, 'contacts.update', 'Updated', result);
     });
 
   contacts
