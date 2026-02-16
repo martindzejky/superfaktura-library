@@ -34,3 +34,7 @@ alwaysApply: true
 - Use dash-case filenames.
 - Keep text mode and JSON mode behavior stable unless user asks to change.
 - Prefer manual verification flows in this repo unless tests are explicitly requested.
+- Always write valid and safe Typescript.
+- Do not use `any`, instead use `unknown` and proper type guards.
+- Do not cast randomly between types, use proper types.
+- Prefer explicit `if`-based object construction over conditional object spreading for readability.

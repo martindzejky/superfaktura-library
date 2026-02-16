@@ -1,6 +1,6 @@
 export default {
   tabWidth: 2,
-  printWidth: 80,
+  printWidth: 120,
   singleQuote: true,
   trailingComma: 'all',
   bracketSpacing: true,
