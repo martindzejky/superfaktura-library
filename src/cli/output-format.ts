@@ -1,4 +1,3 @@
-import { isError } from 'lodash-es';
 import { ApiError, HttpError, ValidationError } from '../errors';
 import type { Result } from '../types';
 import { normalizeErrorMessages, toRecord } from '../utils';
@@ -25,7 +24,7 @@ export function printSuccess(format: OutputFormat, action: string, result: Resul
 }
 
 export function printError(format: OutputFormat, error: unknown): void {
-  const message = isError(error) ? error.message : 'Unknown error occurred.';
+  const message = error instanceof Error ? error.message : 'Unknown error occurred.';
   const statusCode = getStatusCode(error);
   const errorData = getErrorData(error);
   const apiMessages = getApiMessages(errorData);

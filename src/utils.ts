@@ -1,8 +1,7 @@
-import { isArray, isNumber, isPlainObject, isString } from 'lodash-es';
 import type { UnknownRecord } from './types';
 
 export function isRecord(value: unknown): value is UnknownRecord {
-  return isPlainObject(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function toRecord(value: unknown): UnknownRecord | null {
@@ -16,10 +15,10 @@ export function parseCompanyId(value: string | number | undefined): number | und
   if (value === undefined) {
     return undefined;
   }
-  if (isNumber(value) && Number.isInteger(value)) {
+  if (typeof value === 'number' && Number.isInteger(value)) {
     return value;
   }
-  if (isString(value) && value.trim() !== '') {
+  if (typeof value === 'string' && value.trim() !== '') {
     const parsed = Number(value);
     if (Number.isInteger(parsed)) {
       return parsed;
@@ -29,10 +28,10 @@ export function parseCompanyId(value: string | number | undefined): number | und
 }
 
 export function normalizeErrorMessages(errorMessage: unknown): string[] {
-  if (isArray(errorMessage)) {
-    return errorMessage.filter((value): value is string => isString(value));
+  if (Array.isArray(errorMessage)) {
+    return errorMessage.filter((value): value is string => typeof value === 'string');
   }
-  if (isString(errorMessage) && errorMessage.trim() !== '') {
+  if (typeof errorMessage === 'string' && errorMessage.trim() !== '') {
     return [errorMessage];
   }
   return [];
