@@ -2,6 +2,23 @@ export type UnknownRecord = Record<string, unknown>;
 
 export type ScalarValue = string | number | boolean | null | undefined;
 
+export type InvoicePaymentType =
+  | 'accreditation'
+  | 'barion'
+  | 'besteron'
+  | 'cash'
+  | 'card'
+  | 'cod'
+  | 'credit'
+  | 'debit'
+  | 'inkaso'
+  | 'gopay'
+  | 'other'
+  | 'paypal'
+  | 'transfer'
+  | 'trustpay'
+  | 'viamo';
+
 export interface ClientConfig {
   baseUrl?: string;
   email?: string;
@@ -60,4 +77,11 @@ export interface InvoiceUpdatePayload {
   extra?: UnknownRecord;
   myData?: UnknownRecord;
   tags?: number[];
+}
+
+export interface InvoicePaymentPayload {
+  amount?: number;
+  currency?: string;
+  date?: string;
+  payment_type?: InvoicePaymentType;
 }

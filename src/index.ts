@@ -6,6 +6,7 @@ export type {
   ContactPayload,
   InvoiceCreatePayload,
   InvoiceItemPayload,
+  InvoicePaymentPayload,
   InvoiceUpdatePayload,
   ListQuery,
   Result,

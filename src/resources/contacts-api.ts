@@ -1,10 +1,5 @@
 import { toNamedQueryPath } from '../core/query-path';
-import type {
-  ContactPayload,
-  ListQuery,
-  Result,
-  UnknownRecord,
-} from '../types';
+import type { ContactPayload, ListQuery, Result, UnknownRecord } from '../types';
 import { HttpClient } from '../core/http-client';
 
 export class ContactsApiImpl {

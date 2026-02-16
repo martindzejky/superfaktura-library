@@ -3,7 +3,8 @@ import { writeFile } from 'node:fs/promises';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess } from '../output-format';
-import { toInvoiceCreatePayload, toInvoiceUpdatePayload } from '../../utils';
+import type { InvoicePaymentPayload } from '../../types';
+import { toInvoiceCreatePayload, toInvoicePaymentPayload, toInvoiceUpdatePayload } from '../../utils';
 
 export function registerInvoiceCommands(rootProgram: Command): void {
   const invoices = rootProgram.command('invoices').description('Manage invoices.');
@@ -98,5 +99,31 @@ export function registerInvoiceCommands(rootProgram: Command): void {
           contentType: pdf.contentType,
         },
       });
+    });
+
+  invoices
+    .command('pay')
+    .description('Pay an invoice by ID.')
+    .argument('<id>', 'Invoice ID', Number)
+    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .action(async (id: number, options: { data?: string }) => {
+      const runtime = resolveRuntimeContext(invoices);
+      let paymentPayload: InvoicePaymentPayload | undefined;
+      if (options.data !== undefined) {
+        const payload = await parseDataInput(options.data);
+        paymentPayload = toInvoicePaymentPayload(payload);
+      }
+      const result = await runtime.client.invoices.pay(id, paymentPayload);
+      printSuccess(runtime.output, 'invoices.pay', result);
+    });
+
+  invoices
+    .command('mark-sent')
+    .description('Toggle invoice sent flag by ID.')
+    .argument('<id>', 'Invoice ID', Number)
+    .action(async (id: number) => {
+      const runtime = resolveRuntimeContext(invoices);
+      const result = await runtime.client.invoices.markAsSent(id);
+      printSuccess(runtime.output, 'invoices.mark-sent', result);
     });
 }

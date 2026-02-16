@@ -21,11 +21,7 @@ export class HttpClient {
     this.timeoutMs = config.timeoutMs;
   }
 
-  async request(
-    method: HttpMethod,
-    path: string,
-    body?: UnknownRecord,
-  ): Promise<Result<UnknownRecord>> {
+  async request(method: HttpMethod, path: string, body?: UnknownRecord): Promise<Result<UnknownRecord>> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 

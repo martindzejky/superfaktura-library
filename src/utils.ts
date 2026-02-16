@@ -1,28 +1,41 @@
-import {
-  isArray,
-  isBoolean,
-  isNull,
-  isNumber,
-  isPlainObject,
-  isString,
-} from 'lodash-es';
+import { isArray, isBoolean, isNull, isNumber, isPlainObject, isString } from 'lodash-es';
 import type {
   ContactPayload,
   InvoiceCreatePayload,
+  InvoicePaymentType,
   InvoiceItemPayload,
+  InvoicePaymentPayload,
   InvoiceUpdatePayload,
   ScalarValue,
   UnknownRecord,
 } from './types';
 
+const INVOICE_PAYMENT_TYPES: ReadonlyArray<InvoicePaymentType> = [
+  'accreditation',
+  'barion',
+  'besteron',
+  'cash',
+  'card',
+  'cod',
+  'credit',
+  'debit',
+  'inkaso',
+  'gopay',
+  'other',
+  'paypal',
+  'transfer',
+  'trustpay',
+  'viamo',
+];
+
+const INVOICE_PAYMENT_TYPE_SET = new Set<string>(INVOICE_PAYMENT_TYPES);
+
+function isInvoicePaymentType(value: string): value is InvoicePaymentType {
+  return INVOICE_PAYMENT_TYPE_SET.has(value);
+}
+
 function isScalarValue(value: unknown): value is ScalarValue {
-  return (
-    value === undefined ||
-    isString(value) ||
-    isNumber(value) ||
-    isBoolean(value) ||
-    isNull(value)
-  );
+  return value === undefined || isString(value) || isNumber(value) || isBoolean(value) || isNull(value);
 }
 
 export function isRecord(value: unknown): value is UnknownRecord {
@@ -36,9 +49,7 @@ export function toRecord(value: unknown): UnknownRecord | null {
   return value;
 }
 
-export function parseCompanyId(
-  value: string | number | undefined,
-): number | undefined {
+export function parseCompanyId(value: string | number | undefined): number | undefined {
   if (value === undefined) {
     return undefined;
   }
@@ -112,10 +123,7 @@ function toInvoiceContactPayload(value: unknown): ContactPayload {
   };
 }
 
-function toInvoiceItemPayload(
-  item: unknown,
-  index: number,
-): InvoiceItemPayload {
+function toInvoiceItemPayload(item: unknown, index: number): InvoiceItemPayload {
   if (!isRecord(item)) {
     throw new Error(`Invoice item at index ${index} must be an object.`);
   }
@@ -131,10 +139,7 @@ function toInvoiceItemPayload(
   return Object.fromEntries(entries);
 }
 
-function toOptionalRecord(
-  value: unknown,
-  fieldName: string,
-): UnknownRecord | undefined {
+function toOptionalRecord(value: unknown, fieldName: string): UnknownRecord | undefined {
   if (value === undefined) {
     return undefined;
   }
@@ -154,18 +159,14 @@ function toOptionalTags(value: unknown): number[] | undefined {
   return value;
 }
 
-export function toInvoiceCreatePayload(
-  value: UnknownRecord,
-): InvoiceCreatePayload {
+export function toInvoiceCreatePayload(value: UnknownRecord): InvoiceCreatePayload {
   const rawItems = value.items;
   if (!isArray(rawItems) || rawItems.length === 0) {
     throw new Error('Invoice payload must include non-empty items array.');
   }
 
   const contact = toInvoiceContactPayload(value.contact);
-  const items = rawItems.map((item, index) =>
-    toInvoiceItemPayload(item, index),
-  );
+  const items = rawItems.map((item, index) => toInvoiceItemPayload(item, index));
 
   const payload: InvoiceCreatePayload = {
     contact,
@@ -196,10 +197,7 @@ export function toInvoiceCreatePayload(
   return payload;
 }
 
-export function toInvoiceUpdatePayload(
-  id: number,
-  value: UnknownRecord,
-): InvoiceUpdatePayload {
+export function toInvoiceUpdatePayload(id: number, value: UnknownRecord): InvoiceUpdatePayload {
   const payload: InvoiceUpdatePayload = { id };
 
   if (value.contact !== undefined) {
@@ -209,9 +207,7 @@ export function toInvoiceUpdatePayload(
     if (!isArray(value.items)) {
       throw new Error('"items" must be an array when provided.');
     }
-    payload.items = value.items.map((item, index) =>
-      toInvoiceItemPayload(item, index),
-    );
+    payload.items = value.items.map((item, index) => toInvoiceItemPayload(item, index));
   }
 
   const invoice = toOptionalRecord(value.invoice, 'invoice');
@@ -245,6 +241,45 @@ export function toInvoiceUpdatePayload(
     payload.tags === undefined
   ) {
     throw new Error('Invoice update payload is empty.');
+  }
+
+  return payload;
+}
+
+export function toInvoicePaymentPayload(value: UnknownRecord): InvoicePaymentPayload {
+  const payload: InvoicePaymentPayload = {};
+
+  for (const [key, entryValue] of Object.entries(value)) {
+    if (key === 'amount') {
+      if (!isNumber(entryValue) || !Number.isFinite(entryValue)) {
+        throw new Error('"amount" must be a number.');
+      }
+      payload.amount = entryValue;
+      continue;
+    }
+    if (key === 'currency') {
+      if (!isString(entryValue)) {
+        throw new Error('"currency" must be a string.');
+      }
+      payload.currency = entryValue;
+      continue;
+    }
+    if (key === 'date') {
+      if (!isString(entryValue)) {
+        throw new Error('"date" must be a string in YYYY-MM-DD format.');
+      }
+      payload.date = entryValue;
+      continue;
+    }
+    if (key === 'payment_type') {
+      if (!isString(entryValue) || !isInvoicePaymentType(entryValue)) {
+        throw new Error('"payment_type" must be a string.');
+      }
+      payload.payment_type = entryValue;
+      continue;
+    }
+
+    throw new Error(`Unknown invoice payment field "${key}".`);
   }
 
   return payload;

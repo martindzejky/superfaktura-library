@@ -51,6 +51,14 @@ const invoice = await client.invoices.create({
   items: [{ name: 'Consulting', quantity: 1, unit_price: 100, tax: 20 }],
 });
 
+await client.invoices.pay(123, {
+  amount: 100,
+  payment_type: 'transfer',
+  date: '2026-02-14',
+});
+
+await client.invoices.markAsSent(123);
+
 const pdf = await client.invoices.downloadPdf(123, 'sk');
 ```
 
@@ -74,6 +82,13 @@ npx superfaktura invoices create --data @./invoice-create.json
 
 # Download invoice PDF
 npx superfaktura invoices pdf 123 --path ./invoice-123.pdf
+
+# Pay invoice with optional payment payload
+npx superfaktura invoices pay 123 \
+  --data '{"amount":100,"payment_type":"transfer","date":"2026-02-14"}'
+
+# Mark/unmark invoice as sent
+npx superfaktura invoices mark-sent 123
 
 # JSON output for automations/agents
 npx superfaktura invoices get 123 --output json

@@ -3,6 +3,7 @@ import { toNamedQueryPath } from '../core/query-path';
 import type {
   BinaryResult,
   InvoiceCreatePayload,
+  InvoicePaymentPayload,
   InvoiceUpdatePayload,
   ListQuery,
   Result,
@@ -55,6 +56,40 @@ export class InvoicesApiImpl {
 
   remove(id: number): Promise<Result<UnknownRecord>> {
     return this.httpClient.request('DELETE', `/invoices/delete/${id}`);
+  }
+
+  pay(
+    id: number,
+    payload: InvoicePaymentPayload = {},
+  ): Promise<Result<UnknownRecord>> {
+    const invoicePayment: UnknownRecord = {
+      invoice_id: id,
+    };
+
+    if (payload.amount !== undefined) {
+      invoicePayment.amount = payload.amount;
+    }
+    if (payload.currency !== undefined) {
+      invoicePayment.currency = payload.currency;
+    }
+    if (payload.date !== undefined) {
+      invoicePayment.date = payload.date;
+    }
+    if (payload.payment_type !== undefined) {
+      invoicePayment.payment_type = payload.payment_type;
+    }
+
+    return this.httpClient.request(
+      'POST',
+      '/invoice_payments/add/ajax%3A1/api%3A1',
+      {
+        InvoicePayment: invoicePayment,
+      },
+    );
+  }
+
+  markAsSent(id: number): Promise<Result<UnknownRecord>> {
+    return this.httpClient.request('GET', `/invoices/mark_sent/${id}`);
   }
 
   downloadPdf(id: number, language = 'sk'): Promise<BinaryResult> {
