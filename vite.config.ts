@@ -1,17 +1,11 @@
 import { resolve } from 'node:path';
-import { builtinModules } from 'node:module';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
-
-const externalModules = new Set([
-  ...builtinModules,
-  ...builtinModules.map((moduleName) => `node:${moduleName}`),
-  'commander',
-  'dotenv',
-]);
+import { externalizeDeps } from 'vite-plugin-externalize-deps';
 
 export default defineConfig({
   plugins: [
+    externalizeDeps(),
     dts({
       include: ['src/**/*.ts'],
       tsconfigPath: './tsconfig.json',
@@ -29,9 +23,6 @@ export default defineConfig({
     },
     sourcemap: true,
     target: 'node22',
-    rollupOptions: {
-      external: (id) => externalModules.has(id),
-    },
   },
   define: {
     __PACKAGE_VERSION__: process.env.npm_package_version
