@@ -1,18 +1,15 @@
 export { createClient } from './client/create-client';
 export { ApiError, HttpError, NotFoundError, ValidationError } from './core/errors';
+export type { BinaryResult, ClientConfig, DeleteResult, ListQuery, ListResult, Result } from './core/types';
+export type { Contact, ContactInput } from './data/contact';
+export type { Currency } from './data/currency';
 export type {
-  BinaryResult,
-  ClientConfig,
-  ContactPayload,
-  InvoiceContactDataSource,
-  InvoiceContactPayload,
-  InvoiceCreatePayload,
-  InvoiceDataPayload,
-  InvoiceItemPayload,
-  InvoicePaymentPayload,
-  InvoiceUpdatePayload,
-  ListQuery,
-  Result,
-  ScalarValue,
-  UnknownRecord,
-} from './core/types';
+  Invoice,
+  InvoiceFlag,
+  InvoiceInput,
+  InvoiceItem,
+  InvoiceItemInput,
+  InvoiceStatus,
+  InvoiceType,
+  PaymentType,
+} from './data/invoice';
