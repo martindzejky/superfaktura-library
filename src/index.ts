@@ -13,3 +13,5 @@ export type {
   InvoiceType,
   PaymentType,
 } from './data/invoice';
+export type { InvoicePaymentInput } from './data/invoice-payment';
+export type { Language } from './data/language';

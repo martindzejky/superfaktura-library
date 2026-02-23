@@ -112,3 +112,25 @@ export const ApiInvoiceItemResponseSchema = z.object({
 });
 
 export type ApiInvoiceItemResponse = z.infer<typeof ApiInvoiceItemResponseSchema>;
+
+// ---------- Invoice Payment ----------
+
+export const ApiInvoicePaymentResponseSchema = z.object({
+  country_exchange_rate: z.number(),
+  created: z.string(), // "YYYY-MM-DD"
+  currency: z.string(), // currency symbol
+  exchange_rate: z.number(),
+  home_currency: z.string(), // home currency symbol
+  invoice_currency: z.string(), // invoice currency symbol
+  invoice_id: z.number(),
+  invoice_type: z.string(), // "regular", "proforma", "cancel"
+  overdue: z.boolean(),
+  paid: z.number(), // total paid amount
+  parent_id: z.number().nullable(),
+  payment_id: z.string(),
+  status: z.number(), // invoice status after payment
+  to_pay: z.number(), // remaining amount to pay
+  to_pay_home_cur: z.number(), // remaining amount in home currency
+});
+
+export type ApiInvoicePaymentResponse = z.infer<typeof ApiInvoicePaymentResponseSchema>;
