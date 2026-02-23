@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const Currency = z.enum([
+export const CurrencySchema = z.enum([
   'AED',
   'AFN',
   'ALL',
@@ -158,3 +158,5 @@ export const Currency = z.enum([
   'ZMW',
   'ZWL',
 ]);
+
+export type Currency = z.infer<typeof CurrencySchema>;

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { Currency } from './currency';
+import { CurrencySchema } from './currency';
 
-export const PaymentType = z.enum([
+export const PaymentTypeSchema = z.enum([
   'accreditation',
   'barion',
   'besteron',
@@ -19,11 +19,19 @@ export const PaymentType = z.enum([
   'viamo',
 ]);
 
-export const InvoiceType = z.enum(['regular', 'proforma', 'cancel', 'estimate', 'order']);
+export type PaymentType = z.infer<typeof PaymentTypeSchema>;
 
-export const InvoiceStatus = z.enum(['draft', 'sent', 'overdue', 'paid']);
+export const InvoiceTypeSchema = z.enum(['regular', 'proforma', 'cancel', 'estimate', 'order']);
 
-export const InvoiceFlag = z.enum(['issued', 'partially_paid', 'paid', 'overdue']);
+export type InvoiceType = z.infer<typeof InvoiceTypeSchema>;
+
+export const InvoiceStatusSchema = z.enum(['draft', 'sent', 'overdue', 'paid']);
+
+export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>;
+
+export const InvoiceFlagSchema = z.enum(['issued', 'partially_paid', 'paid', 'overdue']);
+
+export type InvoiceFlag = z.infer<typeof InvoiceFlagSchema>;
 
 // fields that can be specified when creating or updating an invoice item
 const InvoiceItemInputBase = z.object({
@@ -71,15 +79,15 @@ export type InvoiceItem = z.infer<typeof InvoiceItemSchema>;
 // fields that can be specified when creating or updating an invoice
 export const InvoiceInputSchema = z.object({
   name: z.string().optional(), // invoice name / title
-  type: InvoiceType.optional(), // invoice type, defaults to "regular"
-  invoiceCurrency: Currency.optional(), // currency of the invoice
+  type: InvoiceTypeSchema.optional(), // invoice type, defaults to "regular"
+  invoiceCurrency: CurrencySchema.optional(), // currency of the invoice
   variableSymbol: z.string().optional(), // variable symbol for payment identification
   constantSymbol: z.string().optional(), // constant symbol
   specificSymbol: z.string().optional(), // specific symbol
   created: z.date().optional(), // issue date
   deliveryDate: z.date().optional(), // delivery date
   dueDate: z.date().optional(), // due date
-  paymentType: PaymentType.optional(), // payment method
+  paymentType: PaymentTypeSchema.optional(), // payment method
   headerComment: z.string().optional(), // comment displayed above invoice items
   internalComment: z.string().optional(), // internal comment (not shown on invoice)
   comment: z.string().optional(), // general comment
@@ -96,14 +104,14 @@ export const InvoiceSchema = InvoiceInputSchema.extend({
   id: z.string(), // unique invoice ID
   clientId: z.string(), // linked client/contact ID
   name: z.string(), // resolved invoice name
-  type: InvoiceType, // resolved invoice type
-  status: InvoiceStatus, // invoice status
-  flag: InvoiceFlag, // invoice flag
+  type: InvoiceTypeSchema, // resolved invoice type
+  status: InvoiceStatusSchema, // invoice status
+  flag: InvoiceFlagSchema, // invoice flag
   totalWithoutVat: z.number(), // total amount without VAT (computed)
   totalWithVat: z.number(), // total amount with VAT (computed)
   vat: z.number(), // total VAT amount (computed)
-  invoiceCurrency: Currency, // resolved currency
-  homeCurrency: Currency, // home/base currency
+  invoiceCurrency: CurrencySchema, // resolved currency
+  homeCurrency: CurrencySchema, // home/base currency
   exchangeRate: z.number(), // exchange rate between invoice and home currency
   invoiceNo: z.string(), // invoice number (raw)
   invoiceNoFormatted: z.string(), // formatted invoice number for display

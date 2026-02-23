@@ -1,14 +1,31 @@
 import { HttpClient } from '../core/http-client';
 import { toNamedQueryPath } from '../core/query-path';
-import type {
-  BinaryResult,
-  InvoiceCreatePayload,
-  InvoicePaymentPayload,
-  InvoiceUpdatePayload,
-  ListQuery,
-  Result,
-  UnknownRecord,
-} from '../core/types';
+import type { BinaryResult, ListQuery, ListResult, Result, UnknownRecord } from '../core/types';
+import { formatDate, isRecord } from '../core/utils';
+import { ApiInvoiceItemResponseSchema, ApiInvoiceResponseSchema } from '../data/api';
+import type { ContactInput } from '../data/contact';
+import { contactInputToApi } from '../data/contact-adapter';
+import type { Invoice, InvoiceInput } from '../data/invoice';
+import { invoiceFromApi, invoiceInputToApi } from '../data/invoice-adapter';
+import type { InvoicePaymentInput } from '../data/invoice-payment';
+import type { Language } from '../data/language';
+
+function extractInvoice(data: UnknownRecord): Invoice {
+  const nested = isRecord(data.data) ? data.data : data;
+
+  const rawInvoice = nested.Invoice;
+  if (!isRecord(rawInvoice)) {
+    throw new Error('Unexpected API response: missing Invoice object.');
+  }
+
+  const rawItems = Array.isArray(nested.InvoiceItem) ? nested.InvoiceItem : [];
+  const parsedInvoice = ApiInvoiceResponseSchema.parse(rawInvoice);
+  const parsedItems = rawItems
+    .filter((item): item is UnknownRecord => isRecord(item))
+    .map((item) => ApiInvoiceItemResponseSchema.parse(item));
+
+  return invoiceFromApi(parsedInvoice, parsedItems);
+}
 
 export class InvoicesApiImpl {
   private readonly httpClient: HttpClient;
@@ -17,67 +34,101 @@ export class InvoicesApiImpl {
     this.httpClient = httpClient;
   }
 
-  create(payload: InvoiceCreatePayload): Promise<Result<UnknownRecord>> {
-    return this.httpClient.request('POST', '/invoices/create', {
-      Invoice: payload.invoice ?? {},
-      InvoiceItem: payload.items,
-      Client: payload.contact,
+  async create(input: InvoiceInput, contact: ContactInput | { id: string }): Promise<Result<Invoice>> {
+    const { Invoice, InvoiceItem } = invoiceInputToApi(input);
+    const Client =
+      'id' in contact && typeof contact.id === 'string'
+        ? { id: contact.id }
+        : contactInputToApi(contact as ContactInput).Client;
+
+    const result = await this.httpClient.request('POST', '/invoices/create', {
+      Invoice,
+      InvoiceItem,
+      Client,
     });
+    return { statusCode: result.statusCode, data: extractInvoice(result.data) };
   }
 
-  getById(id: number): Promise<Result<UnknownRecord>> {
-    return this.httpClient.request('GET', `/invoices/view/${id}.json`);
+  async getById(id: string): Promise<Result<Invoice>> {
+    const result = await this.httpClient.request('GET', `/invoices/view/${id}.json`);
+    return { statusCode: result.statusCode, data: extractInvoice(result.data) };
   }
 
-  list(query: ListQuery = {}): Promise<Result<UnknownRecord>> {
+  async list(query: ListQuery = {}): Promise<ListResult<Invoice>> {
     const namedQuery = toNamedQueryPath(query);
     const suffix = namedQuery.length > 0 ? `/${namedQuery}` : '';
-    return this.httpClient.request('GET', `/invoices/index.json${suffix}`);
-  }
+    const result = await this.httpClient.request('GET', `/invoices/index.json${suffix}`);
+    const data = result.data;
 
-  update(payload: InvoiceUpdatePayload): Promise<Result<UnknownRecord>> {
-    return this.httpClient.request('POST', '/invoices/edit', {
-      Invoice: {
-        id: payload.id,
-        ...(payload.invoice ?? {}),
-      },
-      InvoiceItem: payload.items ?? [],
-      Client: payload.contact ?? {},
-    });
-  }
+    const rawItems = Array.isArray(data.items) ? data.items : [];
+    const items: Invoice[] = [];
 
-  remove(id: number): Promise<Result<UnknownRecord>> {
-    return this.httpClient.request('DELETE', `/invoices/delete/${id}`);
-  }
+    for (const entry of rawItems) {
+      if (!isRecord(entry)) continue;
+      const rawInvoice = entry.Invoice;
+      if (!isRecord(rawInvoice)) continue;
 
-  pay(id: number, payload: InvoicePaymentPayload = {}): Promise<Result<UnknownRecord>> {
-    const invoicePayment: UnknownRecord = {
-      invoice_id: id,
+      const rawInvoiceItems = Array.isArray(entry.InvoiceItem) ? entry.InvoiceItem : [];
+      const parsedInvoice = ApiInvoiceResponseSchema.parse(rawInvoice);
+      const parsedItems = rawInvoiceItems
+        .filter((item): item is UnknownRecord => isRecord(item))
+        .map((item) => ApiInvoiceItemResponseSchema.parse(item));
+
+      items.push(invoiceFromApi(parsedInvoice, parsedItems));
+    }
+
+    return {
+      statusCode: result.statusCode,
+      items,
+      itemCount: typeof data.itemCount === 'number' ? data.itemCount : items.length,
+      page: typeof data.page === 'number' ? data.page : 1,
+      pageCount: typeof data.pageCount === 'number' ? data.pageCount : 1,
+      perPage: typeof data.perPage === 'number' ? data.perPage : items.length,
     };
+  }
 
-    if (payload.amount !== undefined) {
-      invoicePayment.amount = payload.amount;
-    }
-    if (payload.currency !== undefined) {
-      invoicePayment.currency = payload.currency;
-    }
-    if (payload.date !== undefined) {
-      invoicePayment.date = payload.date;
-    }
-    if (payload.payment_type !== undefined) {
-      invoicePayment.payment_type = payload.payment_type;
+  async update(id: string, input: InvoiceInput, contact?: ContactInput | { id: string }): Promise<Result<Invoice>> {
+    const { Invoice, InvoiceItem } = invoiceInputToApi(input);
+    Invoice.id = id;
+
+    let Client: UnknownRecord = {};
+    if (contact) {
+      Client =
+        'id' in contact && typeof contact.id === 'string'
+          ? { id: contact.id }
+          : contactInputToApi(contact as ContactInput).Client;
     }
 
-    return this.httpClient.request('POST', '/invoice_payments/add/ajax%3A1/api%3A1', {
-      InvoicePayment: invoicePayment,
+    const result = await this.httpClient.request('POST', '/invoices/edit', {
+      Invoice,
+      InvoiceItem,
+      Client,
+    });
+    return { statusCode: result.statusCode, data: extractInvoice(result.data) };
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.httpClient.request('DELETE', `/invoices/delete/${id}`);
+  }
+
+  async pay(id: string, input: InvoicePaymentInput = {}): Promise<void> {
+    const body: UnknownRecord = { invoice_id: id };
+
+    if (input.amount) body.amount = input.amount;
+    if (input.currency) body.currency = input.currency;
+    if (input.date) body.date = formatDate(input.date);
+    if (input.paymentType) body.payment_type = input.paymentType;
+
+    await this.httpClient.request('POST', '/invoice_payments/add/ajax%3A1/api%3A1', {
+      InvoicePayment: body,
     });
   }
 
-  markAsSent(id: number): Promise<Result<UnknownRecord>> {
-    return this.httpClient.request('GET', `/invoices/mark_sent/${id}`);
+  async markAsSent(id: string): Promise<void> {
+    await this.httpClient.request('GET', `/invoices/mark_sent/${id}`);
   }
 
-  downloadPdf(id: number, language = 'slo'): Promise<BinaryResult> {
+  downloadPdf(id: string, language: Language = 'slo'): Promise<BinaryResult> {
     return this.httpClient.requestBinary('GET', `/${language}/invoices/pdf/${id}`);
   }
 }

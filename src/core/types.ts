@@ -22,10 +22,6 @@ export interface ListResult<T> {
   perPage: number;
 }
 
-export interface DeleteResult {
-  statusCode: number;
-}
-
 export interface BinaryResult {
   statusCode: number;
   data: Uint8Array;

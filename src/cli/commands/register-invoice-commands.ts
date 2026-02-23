@@ -3,26 +3,27 @@ import { writeFile } from 'node:fs/promises';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess } from '../output-format';
-import type {
-  InvoiceCreatePayload,
-  InvoicePaymentPayload,
-  InvoiceUpdatePayload,
-  Result,
-  UnknownRecord,
-} from '../../core/types';
-import { toRecord } from '../../core/utils';
+import type { Invoice, InvoiceInput } from '../../data/invoice';
+import type { ContactInput } from '../../data/contact';
+import type { InvoicePaymentInput } from '../../data/invoice-payment';
+import type { ListResult, Result, UnknownRecord } from '../../core/types';
+import { isRecord } from '../../core/utils';
 import type { OutputFormat } from '../types';
+import { LanguageSchema } from '../../data/language';
 
 interface InvoiceOptions {
   data?: string;
   name?: string;
   price?: number;
-  contactId?: number;
+  contactId?: string;
   contactName?: string;
   contactEmail?: string;
 }
 
-function buildInvoiceContactFromFlags(options: InvoiceOptions, requireContact: boolean): UnknownRecord | undefined {
+function buildContactFromFlags(
+  options: InvoiceOptions,
+  requireContact: boolean,
+): ContactInput | { id: string } | undefined {
   const hasContactId = options.contactId !== undefined;
   const hasContactName = options.contactName !== undefined;
   const hasContactEmail = options.contactEmail !== undefined;
@@ -36,134 +37,75 @@ function buildInvoiceContactFromFlags(options: InvoiceOptions, requireContact: b
   }
 
   if (hasContactId) {
-    return { id: options.contactId };
+    return { id: options.contactId! };
   }
 
-  const contactPayload: UnknownRecord = {};
-
-  if (options.contactName !== undefined) {
-    contactPayload.name = options.contactName;
-  }
-  if (options.contactEmail !== undefined) {
-    contactPayload.email = options.contactEmail;
-  }
-
-  return contactPayload;
+  const contact: UnknownRecord = {};
+  if (options.contactName) contact.name = options.contactName;
+  if (options.contactEmail) contact.email = options.contactEmail;
+  return contact as unknown as ContactInput;
 }
 
-function buildInvoiceCreatePayloadFromFlags(options: InvoiceOptions): InvoiceCreatePayload {
+function buildInvoiceInputFromFlags(options: InvoiceOptions): InvoiceInput {
   if (options.price === undefined) {
     throw new Error('Provide --price or use --data for invoice create.');
   }
 
-  const contact = buildInvoiceContactFromFlags(options, true);
-  if (contact === undefined) {
-    throw new Error('Missing contact data.');
-  }
-
-  const payload: UnknownRecord = {
-    contact,
-    items: [{ unit_price: options.price }],
+  const input: UnknownRecord = {
+    items: [{ unitPrice: options.price }],
   };
 
   if (options.name !== undefined) {
-    payload.invoice = {
-      name: options.name,
-    };
+    input.name = options.name;
   }
 
-  return payload as unknown as InvoiceCreatePayload;
+  return input as unknown as InvoiceInput;
 }
 
-function buildInvoiceUpdatePayloadFromFlags(id: number, options: InvoiceOptions): InvoiceUpdatePayload {
-  const payload: UnknownRecord = { id };
-
-  if (options.name !== undefined) {
-    payload.invoice = {
-      name: options.name,
-    };
-  }
-
-  if (options.price !== undefined) {
-    payload.items = [{ unit_price: options.price }];
-  }
-
-  const contact = buildInvoiceContactFromFlags(options, false);
-  if (contact !== undefined) {
-    payload.contact = contact;
-  }
-
-  if (Object.keys(payload).length === 1) {
-    throw new Error(
-      'Provide --data or at least one flag: --name, --price, --contact-id, --contact-name, --contact-email.',
-    );
-  }
-
-  return payload as unknown as InvoiceUpdatePayload;
-}
-
-function printInvoiceMutation(output: OutputFormat, action: string, verb: string, result: Result<UnknownRecord>): void {
+function printInvoiceMutation(output: OutputFormat, action: string, verb: string, result: Result<Invoice>): void {
   if (output === 'json') {
     printSuccess(output, action, result);
     return;
   }
-  const nested = toRecord(result.data.data);
-  const invoice = nested ? toRecord(nested.Invoice) : toRecord(result.data.Invoice);
-  const id = invoice?.id ?? 'unknown';
-  console.log(`${verb} invoice with id ${id}.`);
+  console.log(`${verb} invoice with id ${result.data.id}.`);
 }
 
-function printInvoiceDetail(output: OutputFormat, result: Result<UnknownRecord>): void {
+function printInvoiceDetail(output: OutputFormat, result: Result<Invoice>): void {
   if (output === 'json') {
     printSuccess(output, 'invoices.get', result);
     return;
   }
-  const data = result.data;
-  const invoice = toRecord(data.Invoice);
-  const summary = toRecord(data['0']);
-  const client = toRecord(data.Client);
-
-  if (!invoice) {
-    console.log('No data.');
-    return;
-  }
-
-  console.log(`id: ${invoice.id ?? ''}`);
-  console.log(`name: ${invoice.name ?? ''}`);
-  console.log(`total: ${summary?.total ?? ''}`);
-  console.log(`contact_id: ${client?.id ?? ''}`);
-  console.log(`contact_name: ${client?.name ?? ''}`);
-  console.log(`contact_email: ${client?.email ?? ''}`);
+  const invoice = result.data;
+  console.log(`id: ${invoice.id}`);
+  console.log(`name: ${invoice.name}`);
+  console.log(`total: ${invoice.totalWithVat}`);
+  console.log(`status: ${invoice.status}`);
 }
 
-function printInvoiceList(output: OutputFormat, result: Result<UnknownRecord>): void {
+function printInvoiceList(output: OutputFormat, result: ListResult<Invoice>): void {
   if (output === 'json') {
-    printSuccess(output, 'invoices.list', result);
+    printSuccess(output, 'invoices.list', { statusCode: result.statusCode, data: result });
     return;
   }
-  const data = result.data;
-  const items = Array.isArray(data.items) ? data.items : [];
 
-  if (items.length === 0) {
+  if (result.items.length === 0) {
     console.log('No invoices.');
     return;
   }
 
-  const itemCount = data.itemCount ?? items.length;
-  const page = data.page ?? 1;
-  console.log(`${itemCount} items, page ${page}`);
+  console.log(`${result.itemCount} items, page ${result.page}`);
 
-  for (const item of items) {
-    const record = toRecord(item);
-    if (!record) continue;
-    const invoice = toRecord(record.Invoice);
-    const summary = toRecord(record['0']);
-    const client = toRecord(record.Client);
-    if (!invoice) continue;
-    console.log(
-      `${invoice.id ?? ''}, ${invoice.name ?? ''}, ${summary?.total ?? ''}, ${client?.name ?? ''}, ${client?.email ?? ''}`,
-    );
+  for (const invoice of result.items) {
+    console.log(`${invoice.id}, ${invoice.name}, ${invoice.totalWithVat}, ${invoice.status}`);
   }
+}
+
+function printVoidAction(output: OutputFormat, action: string, message: string): void {
+  if (output === 'json') {
+    console.log(JSON.stringify({ ok: true, action }, null, 2));
+    return;
+  }
+  console.log(message);
 }
 
 export function registerInvoiceCommands(rootProgram: Command): void {
@@ -175,26 +117,43 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .option('--data <json>', 'JSON object or @path/to/file.json')
     .option('--name <text>', 'Invoice name')
     .option('--price <number>', 'Invoice total price', Number)
-    .option('--contact-id <id>', 'Contact ID', Number)
+    .option('--contact-id <id>', 'Contact ID')
     .option('--contact-name <name>', 'Contact name')
     .option('--contact-email <email>', 'Contact email')
     .action(async (options: InvoiceOptions) => {
       const runtime = resolveRuntimeContext(invoices);
-      let payload: InvoiceCreatePayload;
+
+      let input: InvoiceInput;
+      let contact: ContactInput | { id: string };
+
       if (options.data !== undefined) {
-        payload = (await parseDataInput(options.data)) as unknown as InvoiceCreatePayload;
+        const raw = await parseDataInput(options.data);
+        const contactData = isRecord(raw.contact) ? raw.contact : undefined;
+        if (!contactData) {
+          throw new Error('Missing "contact" in --data JSON.');
+        }
+        contact = contactData as unknown as ContactInput | { id: string };
+
+        const { contact: _, ...invoiceData } = raw;
+        input = invoiceData as unknown as InvoiceInput;
       } else {
-        payload = buildInvoiceCreatePayloadFromFlags(options);
+        input = buildInvoiceInputFromFlags(options);
+        const flagContact = buildContactFromFlags(options, true);
+        if (!flagContact) {
+          throw new Error('Missing contact data.');
+        }
+        contact = flagContact;
       }
-      const result = await runtime.client.invoices.create(payload);
+
+      const result = await runtime.client.invoices.create(input, contact);
       printInvoiceMutation(runtime.output, 'invoices.create', 'Created', result);
     });
 
   invoices
     .command('get')
     .description('Get an invoice by ID.')
-    .argument('<id>', 'Invoice ID', Number)
-    .action(async (id: number) => {
+    .argument('<id>', 'Invoice ID')
+    .action(async (id: string) => {
       const runtime = resolveRuntimeContext(invoices);
       const result = await runtime.client.invoices.getById(id);
       printInvoiceDetail(runtime.output, result);
@@ -229,47 +188,60 @@ export function registerInvoiceCommands(rootProgram: Command): void {
   invoices
     .command('update')
     .description('Update an invoice by ID.')
-    .argument('<id>', 'Invoice ID', Number)
+    .argument('<id>', 'Invoice ID')
     .option('--data <json>', 'JSON object or @path/to/file.json')
     .option('--name <text>', 'Invoice name')
     .option('--price <number>', 'Invoice total price', Number)
-    .option('--contact-id <id>', 'Contact ID', Number)
+    .option('--contact-id <id>', 'Contact ID')
     .option('--contact-name <name>', 'Contact name')
     .option('--contact-email <email>', 'Contact email')
-    .action(async (id: number, options: InvoiceOptions) => {
+    .action(async (id: string, options: InvoiceOptions) => {
       const runtime = resolveRuntimeContext(invoices);
-      let payload: InvoiceUpdatePayload;
+
+      let input: InvoiceInput;
+      let contact: ContactInput | { id: string } | undefined;
+
       if (options.data !== undefined) {
-        payload = {
-          ...((await parseDataInput(options.data)) as unknown as InvoiceUpdatePayload),
-          id,
-        };
+        const raw = await parseDataInput(options.data);
+        const contactData = isRecord(raw.contact) ? raw.contact : undefined;
+        contact = contactData as unknown as ContactInput | { id: string } | undefined;
+
+        const { contact: _, ...invoiceData } = raw;
+        input = invoiceData as unknown as InvoiceInput;
       } else {
-        payload = buildInvoiceUpdatePayloadFromFlags(id, options);
+        if (options.name === undefined && options.price === undefined) {
+          throw new Error(
+            'Provide --data or at least one flag: --name, --price, --contact-id, --contact-name, --contact-email.',
+          );
+        }
+        input = buildInvoiceInputFromFlags(options);
+        contact = buildContactFromFlags(options, false);
       }
-      const result = await runtime.client.invoices.update(payload);
+
+      const result = await runtime.client.invoices.update(id, input, contact);
       printInvoiceMutation(runtime.output, 'invoices.update', 'Updated', result);
     });
 
   invoices
     .command('delete')
     .description('Delete an invoice by ID.')
-    .argument('<id>', 'Invoice ID', Number)
-    .action(async (id: number) => {
+    .argument('<id>', 'Invoice ID')
+    .action(async (id: string) => {
       const runtime = resolveRuntimeContext(invoices);
-      const result = await runtime.client.invoices.remove(id);
-      printSuccess(runtime.output, 'invoices.delete', result);
+      await runtime.client.invoices.remove(id);
+      printVoidAction(runtime.output, 'invoices.delete', `Deleted invoice ${id}.`);
     });
 
   invoices
     .command('pdf')
     .description('Download invoice PDF.')
-    .argument('<id>', 'Invoice ID', Number)
+    .argument('<id>', 'Invoice ID')
     .option('--path <file>', 'Output PDF path')
     .option('--language <code>', 'PDF language code (slo, cze, eng, ...)', 'slo')
-    .action(async (id: number, options: { path?: string; language: string }) => {
+    .action(async (id: string, options: { path?: string; language: string }) => {
       const runtime = resolveRuntimeContext(invoices);
-      const pdf = await runtime.client.invoices.downloadPdf(id, options.language);
+      const language = LanguageSchema.parse(options.language);
+      const pdf = await runtime.client.invoices.downloadPdf(id, language);
 
       const outputPath = options.path ?? `invoice-${id}.pdf`;
       await writeFile(outputPath, Buffer.from(pdf.data));
@@ -287,26 +259,25 @@ export function registerInvoiceCommands(rootProgram: Command): void {
   invoices
     .command('pay')
     .description('Pay an invoice by ID.')
-    .argument('<id>', 'Invoice ID', Number)
+    .argument('<id>', 'Invoice ID')
     .option('--data <json>', 'JSON object or @path/to/file.json')
-    .action(async (id: number, options: { data?: string }) => {
+    .action(async (id: string, options: { data?: string }) => {
       const runtime = resolveRuntimeContext(invoices);
-      let paymentPayload: InvoicePaymentPayload | undefined;
+      let paymentInput: InvoicePaymentInput | undefined;
       if (options.data !== undefined) {
-        const payload = await parseDataInput(options.data);
-        paymentPayload = payload as unknown as InvoicePaymentPayload;
+        paymentInput = (await parseDataInput(options.data)) as unknown as InvoicePaymentInput;
       }
-      const result = await runtime.client.invoices.pay(id, paymentPayload);
-      printSuccess(runtime.output, 'invoices.pay', result);
+      await runtime.client.invoices.pay(id, paymentInput);
+      printVoidAction(runtime.output, 'invoices.pay', `Marked invoice ${id} as paid.`);
     });
 
   invoices
     .command('mark-sent')
     .description('Toggle invoice sent flag by ID.')
-    .argument('<id>', 'Invoice ID', Number)
-    .action(async (id: number) => {
+    .argument('<id>', 'Invoice ID')
+    .action(async (id: string) => {
       const runtime = resolveRuntimeContext(invoices);
-      const result = await runtime.client.invoices.markAsSent(id);
-      printSuccess(runtime.output, 'invoices.mark-sent', result);
+      await runtime.client.invoices.markAsSent(id);
+      printVoidAction(runtime.output, 'invoices.mark-sent', `Marked invoice ${id} as sent.`);
     });
 }

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Currency } from './currency';
+import { CurrencySchema } from './currency';
 
 // fields that can be specified when creating or updating a contact
 export const ContactInputSchema = z.object({
@@ -23,7 +23,7 @@ export const ContactInputSchema = z.object({
   deliveryPhone: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().optional(),
-  defaultCurrency: Currency.optional(), // default currency used on documents for this client
+  defaultCurrency: CurrencySchema.optional(), // default currency used on documents for this client
   defaultVariableSymbol: z.string().optional(), // default variable symbol on documents
   defaultDiscount: z.number().optional(), // default discount percentage on documents
   defaultDueDays: z.number().optional(), // default due days on documents

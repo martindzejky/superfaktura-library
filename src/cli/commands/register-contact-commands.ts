@@ -2,8 +2,8 @@ import { Command } from 'commander';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess } from '../output-format';
-import type { ContactPayload, Result, UnknownRecord } from '../../core/types';
-import { toRecord } from '../../core/utils';
+import type { Contact, ContactInput } from '../../data/contact';
+import type { ListResult, Result, UnknownRecord } from '../../core/types';
 import type { OutputFormat } from '../types';
 
 interface ContactOptions {
@@ -12,75 +12,69 @@ interface ContactOptions {
   email?: string;
 }
 
-function buildContactPayloadFromFlags(options: ContactOptions, requireName: boolean): ContactPayload {
+function buildContactInputFromFlags(options: ContactOptions, requireName: boolean): ContactInput {
   if (requireName && (options.name === undefined || options.name.trim() === '')) {
     throw new Error('Provide --name or use --data for contact payload.');
   }
 
-  const payload: UnknownRecord = {};
+  const input: UnknownRecord = {};
   if (options.name !== undefined) {
-    payload.name = options.name;
+    input.name = options.name;
   }
   if (options.email !== undefined) {
-    payload.email = options.email;
+    input.email = options.email;
   }
 
-  if (Object.keys(payload).length === 0) {
+  if (Object.keys(input).length === 0) {
     throw new Error('Provide --data or at least one flag: --name, --email.');
   }
 
-  return payload as unknown as ContactPayload;
+  return input as unknown as ContactInput;
 }
 
-function printContactMutation(output: OutputFormat, action: string, verb: string, result: Result<UnknownRecord>): void {
+function printContactMutation(output: OutputFormat, action: string, verb: string, result: Result<Contact>): void {
   if (output === 'json') {
     printSuccess(output, action, result);
     return;
   }
-  const nested = toRecord(result.data.data);
-  const client = nested ? toRecord(nested.Client) : toRecord(result.data.Client);
-  const id = client?.id ?? 'unknown';
-  console.log(`${verb} contact with id ${id}.`);
+  console.log(`${verb} contact with id ${result.data.id}.`);
 }
 
-function printContactDetail(output: OutputFormat, result: Result<UnknownRecord>): void {
+function printContactDetail(output: OutputFormat, result: Result<Contact>): void {
   if (output === 'json') {
     printSuccess(output, 'contacts.get', result);
     return;
   }
-  const client = toRecord(result.data.Client);
-  if (!client) {
-    console.log('No data.');
-    return;
-  }
-  console.log(`id: ${client.id ?? ''}`);
-  console.log(`name: ${client.name ?? ''}`);
-  console.log(`email: ${client.email ?? ''}`);
+  const contact = result.data;
+  console.log(`id: ${contact.id}`);
+  console.log(`name: ${contact.name}`);
+  console.log(`email: ${contact.email ?? ''}`);
 }
 
-function printContactList(output: OutputFormat, result: Result<UnknownRecord>): void {
+function printContactList(output: OutputFormat, result: ListResult<Contact>): void {
   if (output === 'json') {
-    printSuccess(output, 'contacts.list', result);
+    printSuccess(output, 'contacts.list', { statusCode: result.statusCode, data: result });
     return;
   }
-  const data = result.data;
-  const items = Array.isArray(data.items) ? data.items : [];
 
-  if (items.length === 0) {
+  if (result.items.length === 0) {
     console.log('No contacts.');
     return;
   }
 
-  const itemCount = data.itemCount ?? items.length;
-  const page = data.page ?? 1;
-  console.log(`${itemCount} items, page ${page}`);
+  console.log(`${result.itemCount} items, page ${result.page}`);
 
-  for (const item of items) {
-    const record = toRecord(item);
-    const client = record ? toRecord(record.Client) : null;
-    if (!client) continue;
-    console.log(`${client.id ?? ''}, ${client.name ?? ''}, ${client.email ?? ''}`);
+  for (const contact of result.items) {
+    console.log(`${contact.id}, ${contact.name}, ${contact.email ?? ''}`);
   }
+}
+
+function printVoidAction(output: OutputFormat, action: string, message: string): void {
+  if (output === 'json') {
+    console.log(JSON.stringify({ ok: true, action }, null, 2));
+    return;
+  }
+  console.log(message);
 }
 
 export function registerContactCommands(rootProgram: Command): void {
@@ -94,21 +88,21 @@ export function registerContactCommands(rootProgram: Command): void {
     .option('--email <email>', 'Contact email')
     .action(async (options: ContactOptions) => {
       const runtime = resolveRuntimeContext(contacts);
-      let payload: ContactPayload;
+      let input: ContactInput;
       if (options.data !== undefined) {
-        payload = (await parseDataInput(options.data)) as unknown as ContactPayload;
+        input = (await parseDataInput(options.data)) as unknown as ContactInput;
       } else {
-        payload = buildContactPayloadFromFlags(options, true);
+        input = buildContactInputFromFlags(options, true);
       }
-      const result = await runtime.client.contacts.create(payload);
+      const result = await runtime.client.contacts.create(input);
       printContactMutation(runtime.output, 'contacts.create', 'Created', result);
     });
 
   contacts
     .command('get')
     .description('Get a contact by ID.')
-    .argument('<id>', 'Contact ID', Number)
-    .action(async (id: number) => {
+    .argument('<id>', 'Contact ID')
+    .action(async (id: string) => {
       const runtime = resolveRuntimeContext(contacts);
       const result = await runtime.client.contacts.getById(id);
       printContactDetail(runtime.output, result);
@@ -143,29 +137,29 @@ export function registerContactCommands(rootProgram: Command): void {
   contacts
     .command('update')
     .description('Update a contact by ID.')
-    .argument('<id>', 'Contact ID', Number)
+    .argument('<id>', 'Contact ID')
     .option('--data <json>', 'JSON object or @path/to/file.json')
     .option('--name <name>', 'Contact name')
     .option('--email <email>', 'Contact email')
-    .action(async (id: number, options: ContactOptions) => {
+    .action(async (id: string, options: ContactOptions) => {
       const runtime = resolveRuntimeContext(contacts);
-      let payload: ContactPayload;
+      let input: ContactInput;
       if (options.data !== undefined) {
-        payload = (await parseDataInput(options.data)) as unknown as ContactPayload;
+        input = (await parseDataInput(options.data)) as unknown as ContactInput;
       } else {
-        payload = buildContactPayloadFromFlags(options, false);
+        input = buildContactInputFromFlags(options, false);
       }
-      const result = await runtime.client.contacts.update(id, payload);
+      const result = await runtime.client.contacts.update(id, input);
       printContactMutation(runtime.output, 'contacts.update', 'Updated', result);
     });
 
   contacts
     .command('delete')
     .description('Delete a contact by ID.')
-    .argument('<id>', 'Contact ID', Number)
-    .action(async (id: number) => {
+    .argument('<id>', 'Contact ID')
+    .action(async (id: string) => {
       const runtime = resolveRuntimeContext(contacts);
-      const result = await runtime.client.contacts.remove(id);
-      printSuccess(runtime.output, 'contacts.delete', result);
+      await runtime.client.contacts.remove(id);
+      printVoidAction(runtime.output, 'contacts.delete', `Deleted contact ${id}.`);
     });
 }

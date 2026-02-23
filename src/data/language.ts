@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const Language = z.enum([
+export const LanguageSchema = z.enum([
   'cze',
   'deu',
   'eng',
@@ -16,3 +16,5 @@ export const Language = z.enum([
   'spa',
   'ukr',
 ]);
+
+export type Language = z.infer<typeof LanguageSchema>;
