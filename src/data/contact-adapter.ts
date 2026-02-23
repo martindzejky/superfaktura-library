@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '../types';
-import { emptyToUndefined, nullToUndefined } from '../utils';
+import type { UnknownRecord } from '../core/types';
+import { emptyToUndefined, nullToUndefined } from '../core/utils';
 import type { ApiClientResponse } from './api';
 import type { Contact, ContactInput } from './contact';
 

@@ -2,8 +2,8 @@ import { Command } from 'commander';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess } from '../output-format';
-import type { ContactPayload, Result, UnknownRecord } from '../../types';
-import { toRecord } from '../../utils';
+import type { ContactPayload, Result, UnknownRecord } from '../../core/types';
+import { toRecord } from '../../core/utils';
 import type { OutputFormat } from '../types';
 
 interface ContactOptions {

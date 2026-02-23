@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '../types';
-import { emptyToUndefined, formatDate, nullToUndefined } from '../utils';
+import type { UnknownRecord } from '../core/types';
+import { emptyToUndefined, formatDate, nullToUndefined } from '../core/utils';
 import type { ApiInvoiceItemResponse, ApiInvoiceResponse } from './api';
 import type { Invoice, InvoiceInput, InvoiceItem, InvoiceItemInput } from './invoice';
 

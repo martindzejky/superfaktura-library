@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import { createClient } from '../client/create-client';
 import type { RuntimeContext, GlobalCliOptions } from './types';
-import type { ClientConfig } from '../types';
+import type { ClientConfig } from '../core/types';
 
 export function resolveRuntimeContext(command: Command): RuntimeContext {
   const options = command.optsWithGlobals<GlobalCliOptions>();

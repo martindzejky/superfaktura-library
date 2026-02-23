@@ -1,5 +1,5 @@
 export { createClient } from './client/create-client';
-export { ApiError, HttpError, NotFoundError, ValidationError } from './errors';
+export { ApiError, HttpError, NotFoundError, ValidationError } from './core/errors';
 export type {
   BinaryResult,
   ClientConfig,
@@ -15,4 +15,4 @@ export type {
   Result,
   ScalarValue,
   UnknownRecord,
-} from './types';
+} from './core/types';

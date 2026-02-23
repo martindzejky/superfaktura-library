@@ -1,6 +1,6 @@
-import { ApiError, HttpError, ValidationError } from '../errors';
-import type { Result } from '../types';
-import { normalizeErrorMessages, toRecord } from '../utils';
+import { ApiError, HttpError, ValidationError } from '../core/errors';
+import type { Result } from '../core/types';
+import { normalizeErrorMessages, toRecord } from '../core/utils';
 import type { OutputFormat } from './types';
 
 export function printSuccess(format: OutputFormat, action: string, result: Result<unknown>): void {

@@ -8,7 +8,7 @@ import type {
   ListQuery,
   Result,
   UnknownRecord,
-} from '../types';
+} from '../core/types';
 
 export class InvoicesApiImpl {
   private readonly httpClient: HttpClient;

@@ -1,4 +1,4 @@
-import type { ListQuery } from '../types';
+import type { ListQuery } from './types';
 
 function encodeSearch(search: string): string {
   return Buffer.from(search, 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ',');

@@ -3,8 +3,8 @@ import { DEFAULT_BASE_URL } from '../core/constants';
 import { HttpClient } from '../core/http-client';
 import { ContactsApiImpl } from '../resources/contacts-api';
 import { InvoicesApiImpl } from '../resources/invoices-api';
-import type { ClientConfig } from '../types';
-import { parseCompanyId } from '../utils';
+import type { ClientConfig } from '../core/types';
+import { parseCompanyId } from '../core/utils';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 

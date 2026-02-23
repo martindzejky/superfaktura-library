@@ -1,6 +1,6 @@
-import { ApiError, HttpError, NotFoundError, ValidationError } from '../errors';
-import type { BinaryResult, Result, UnknownRecord } from '../types';
-import { normalizeErrorMessages, toRecord } from '../utils';
+import { ApiError, HttpError, NotFoundError, ValidationError } from './errors';
+import type { BinaryResult, Result, UnknownRecord } from './types';
+import { normalizeErrorMessages, toRecord } from './utils';
 
 interface HttpClientConfig {
   baseUrl: string;

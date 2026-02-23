@@ -37,4 +37,17 @@ alwaysApply: true
 - Always write valid and safe Typescript.
 - Do not use `any`, instead use `unknown` and proper type guards.
 - Do not cast randomly between types, use proper types.
+- Do not cast like `as unknown as Type`, this is invalid forced type changing.
 - Prefer explicit `if`-based object construction over conditional object spreading for readability.
+- Usually simple truthy checks are enough in conditionals instead of directly comparing with `undefined` or `null`.
+
+## Project Structure
+
+- All implementation code lives under `src`.
+- Entry file into the library is `src/index.ts`.
+- Entry file for the CLI is `src/cli/main.ts`. All CLI code lives under `src/cli`.
+- `src/data` contains data schemas and exports types for the data that this library works with.
+- `src/client` contains the exported JS library client implementation.
+- `src/resources` contains implementations for the supported CRUD types.
+- `src/core` has the core functionality.
+- `src/core/utils.ts` has simple project-wide utilities. `src/core/types.ts` contains project-wide types.

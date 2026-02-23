@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import { toRecord } from '../utils';
-import type { UnknownRecord } from '../types';
+import { toRecord } from '../core/utils';
+import type { UnknownRecord } from '../core/types';
 
 export async function parseDataInput(value: string): Promise<UnknownRecord> {
   const raw = value.startsWith('@') ? await readFile(value.slice(1), 'utf8') : value;

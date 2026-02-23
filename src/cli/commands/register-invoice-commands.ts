@@ -9,8 +9,8 @@ import type {
   InvoiceUpdatePayload,
   Result,
   UnknownRecord,
-} from '../../types';
-import { toRecord } from '../../utils';
+} from '../../core/types';
+import { toRecord } from '../../core/utils';
 import type { OutputFormat } from '../types';
 
 interface InvoiceOptions {
