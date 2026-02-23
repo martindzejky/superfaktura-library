@@ -1,5 +1,23 @@
 import type { UnknownRecord } from './types';
 
+export function nullToUndefined<T>(value: T | null): T | undefined {
+  return value === null ? undefined : value;
+}
+
+export function emptyToUndefined(value: string | null): string | undefined {
+  if (value === null || value === '') {
+    return undefined;
+  }
+  return value;
+}
+
+export function formatDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
