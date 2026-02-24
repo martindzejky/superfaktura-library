@@ -154,8 +154,8 @@ export function registerContactCommands(rootProgram: Command): void {
       } else {
         input = buildContactUpdateInput(options);
       }
-      const result = await runtime.client.contacts.update(id, input);
-      printContactMutation(runtime.output, 'contacts.update', 'Updated', result);
+      await runtime.client.contacts.update(id, input);
+      printVoidAction(runtime.output, 'contacts.update', `Updated contact ${id}.`);
     });
 
   contacts

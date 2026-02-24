@@ -230,8 +230,8 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         contact = buildContactFromFlags(options, false);
       }
 
-      const result = await runtime.client.invoices.update(id, input, contact);
-      printInvoiceMutation(runtime.output, 'invoices.update', 'Updated', result);
+      await runtime.client.invoices.update(id, input, contact);
+      printVoidAction(runtime.output, 'invoices.update', `Updated invoice ${id}.`);
     });
 
   invoices

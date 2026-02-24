@@ -18,7 +18,8 @@ export function invoiceItemFromApi(raw: ApiInvoiceItemResponse): InvoiceItem {
     invoiceId: raw.invoice_id,
     name: raw.name,
     description: emptyToUndefined(raw.description),
-    quantity: raw.quantity !== null ? safeParseFloat(raw.quantity, 'invoice item quantity') : undefined,
+    quantity:
+      raw.quantity !== null && raw.quantity !== '' ? safeParseFloat(raw.quantity, 'invoice item quantity') : undefined,
     unitOfMeasure: emptyToUndefined(raw.unit),
     unitPrice: raw.unit_price,
     tax: raw.tax,
@@ -45,7 +46,7 @@ export function invoiceFromApi(raw: ApiInvoiceResponse, rawItems: ApiInvoiceItem
     name: raw.name,
     type: safeParse(InvoiceTypeSchema, raw.type, 'invoice type'),
     status: safeParse(InvoiceStatusSchema, statusMapped, 'invoice status'),
-    flag: safeParse(InvoiceFlagSchema, raw.flag, 'invoice flag'),
+    flag: raw.flag ? safeParse(InvoiceFlagSchema, raw.flag, 'invoice flag') : 'issued',
     totalWithoutVat: amount,
     totalWithVat: amount + vatAmount,
     vat: vatAmount,

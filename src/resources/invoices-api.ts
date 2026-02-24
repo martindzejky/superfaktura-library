@@ -93,11 +93,7 @@ export class InvoicesApiImpl {
     };
   }
 
-  async update(
-    id: string,
-    input: InvoiceUpdateInput,
-    contact?: ContactInput | { id: string },
-  ): Promise<Result<Invoice>> {
+  async update(id: string, input: InvoiceUpdateInput, contact?: ContactInput | { id: string }): Promise<void> {
     const payload = invoiceUpdateInputToApi(input);
     payload.Invoice.id = id;
 
@@ -111,8 +107,7 @@ export class InvoicesApiImpl {
       body.Client = resolveContactPayload(contact);
     }
 
-    const result = await this.httpClient.request('POST', '/invoices/edit', body);
-    return { statusCode: result.statusCode, data: extractInvoice(result.data) };
+    await this.httpClient.request('POST', '/invoices/edit', body);
   }
 
   async remove(id: string): Promise<void> {

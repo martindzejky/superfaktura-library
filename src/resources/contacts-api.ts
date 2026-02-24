@@ -59,11 +59,10 @@ export class ContactsApiImpl {
     };
   }
 
-  async update(id: string, input: ContactUpdateInput): Promise<Result<Contact>> {
+  async update(id: string, input: ContactUpdateInput): Promise<void> {
     const body = contactUpdateInputToApi(input);
     body.Client.id = id;
-    const result = await this.httpClient.request('PATCH', `/clients/edit/${id}`, body);
-    return { statusCode: result.statusCode, data: extractContact(result.data) };
+    await this.httpClient.request('PATCH', `/clients/edit/${id}`, body);
   }
 
   async remove(id: string): Promise<void> {
