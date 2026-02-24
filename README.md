@@ -48,34 +48,33 @@ const created = await client.contacts.create({
   email: 'billing@acme.test',
 });
 
-const invoice = await client.invoices.create({
-  contact: {
+const invoice = await client.invoices.create(
+  {
+    name: 'Invoice 2026-001',
+    invoiceCurrency: 'EUR',
+    items: [
+      {
+        name: 'Consulting',
+        quantity: 1,
+        unitPrice: 2.5,
+        unitOfMeasure: 'h',
+      },
+    ],
+  },
+  {
     name: 'ACME s.r.o.',
     email: 'billing@acme.test',
   },
-  invoice: {
-    name: 'Invoice 2026-001',
-    invoice_currency: 'EUR',
-  },
-  items: [
-    {
-      name: 'Consulting',
-      quantity: 1,
-      unit_price: 2.5,
-      unit: 'h',
-    },
-  ],
-});
+);
 
-await client.invoices.pay(123, {
+await client.invoices.pay('123', {
   amount: 2.5,
-  payment_type: 'transfer',
-  date: '2026-02-14',
+  paymentType: 'transfer',
 });
 
-await client.invoices.markAsSent(123);
+await client.invoices.markAsSent('123');
 
-const pdf = await client.invoices.downloadPdf(123, 'sk');
+const pdf = await client.invoices.downloadPdf('123', 'slo');
 ```
 
 ## CLI usage
@@ -122,7 +121,7 @@ npx superfaktura invoices pdf 123 --path ./invoice-123.pdf
 
 # Pay invoice with optional payment payload
 npx superfaktura invoices pay 123 \
-  --data '{"amount":100,"payment_type":"transfer","date":"2026-02-14"}'
+  --data '{"amount":100,"paymentType":"transfer"}'
 
 # Mark/unmark invoice as sent
 npx superfaktura invoices mark-sent 123
