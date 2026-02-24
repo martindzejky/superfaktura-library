@@ -2,14 +2,17 @@ import { Command } from 'commander';
 import { writeFile } from 'node:fs/promises';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
-import { printSuccess } from '../output-format';
-import type { Invoice, InvoiceInput } from '../../data/invoice';
+import { printSuccess, printVoidAction } from '../output-format';
+import type { Invoice, InvoiceInput, InvoiceUpdateInput } from '../../data/invoice';
+import { InvoiceInputSchema, InvoiceUpdateInputSchema } from '../../data/invoice';
 import type { ContactInput } from '../../data/contact';
+import { ContactInputSchema } from '../../data/contact';
 import type { InvoicePaymentInput } from '../../data/invoice-payment';
+import { InvoicePaymentInputSchema } from '../../data/invoice-payment';
 import type { ListResult, Result, UnknownRecord } from '../../core/types';
-import { isRecord } from '../../core/utils';
+import { isRecord, safeParse } from '../../core/utils';
 import type { OutputFormat } from '../types';
-import { LanguageSchema } from '../../data/language';
+import { LanguageSchema, type Language } from '../../data/language';
 
 interface InvoiceOptions {
   data?: string;
@@ -40,26 +43,21 @@ function buildContactFromFlags(
     return { id: options.contactId! };
   }
 
-  const contact: UnknownRecord = {};
-  if (options.contactName) contact.name = options.contactName;
-  if (options.contactEmail) contact.email = options.contactEmail;
-  return contact as unknown as ContactInput;
+  const raw: UnknownRecord = {};
+  if (options.contactName !== undefined) raw.name = options.contactName;
+  if (options.contactEmail !== undefined) raw.email = options.contactEmail;
+  return safeParse(ContactInputSchema, raw, 'contact input');
 }
 
-function buildInvoiceInputFromFlags(options: InvoiceOptions): InvoiceInput {
-  if (options.price === undefined) {
-    throw new Error('Provide --price or use --data for invoice create.');
+function parseContactFromData(data: UnknownRecord): ContactInput | { id: string } | undefined {
+  const contactData = isRecord(data.contact) ? data.contact : undefined;
+  if (contactData === undefined) {
+    return undefined;
   }
-
-  const input: UnknownRecord = {
-    items: [{ unitPrice: options.price }],
-  };
-
-  if (options.name !== undefined) {
-    input.name = options.name;
+  if (typeof contactData.id === 'string') {
+    return { id: contactData.id };
   }
-
-  return input as unknown as InvoiceInput;
+  return safeParse(ContactInputSchema, contactData, 'contact input');
 }
 
 function printInvoiceMutation(output: OutputFormat, action: string, verb: string, result: Result<Invoice>): void {
@@ -100,14 +98,6 @@ function printInvoiceList(output: OutputFormat, result: ListResult<Invoice>): vo
   }
 }
 
-function printVoidAction(output: OutputFormat, action: string, message: string): void {
-  if (output === 'json') {
-    console.log(JSON.stringify({ ok: true, action }, null, 2));
-    return;
-  }
-  console.log(message);
-}
-
 export function registerInvoiceCommands(rootProgram: Command): void {
   const invoices = rootProgram.command('invoices').description('Manage invoices.');
 
@@ -128,21 +118,32 @@ export function registerInvoiceCommands(rootProgram: Command): void {
 
       if (options.data !== undefined) {
         const raw = await parseDataInput(options.data);
-        const contactData = isRecord(raw.contact) ? raw.contact : undefined;
-        if (!contactData) {
+        const parsedContact = parseContactFromData(raw);
+        if (parsedContact === undefined) {
           throw new Error('Missing "contact" in --data JSON.');
         }
-        contact = contactData as unknown as ContactInput | { id: string };
+        contact = parsedContact;
 
         const { contact: _, ...invoiceData } = raw;
-        input = invoiceData as unknown as InvoiceInput;
+        input = safeParse(InvoiceInputSchema, invoiceData, 'invoice input');
       } else {
-        input = buildInvoiceInputFromFlags(options);
+        if (options.price === undefined) {
+          throw new Error('Provide --price or use --data for invoice create.');
+        }
+
         const flagContact = buildContactFromFlags(options, true);
-        if (!flagContact) {
+        if (flagContact === undefined) {
           throw new Error('Missing contact data.');
         }
         contact = flagContact;
+
+        const invoiceRaw: UnknownRecord = {
+          items: [{ unitPrice: options.price }],
+        };
+        if (options.name !== undefined) {
+          invoiceRaw.name = options.name;
+        }
+        input = safeParse(InvoiceInputSchema, invoiceRaw, 'invoice input');
       }
 
       const result = await runtime.client.invoices.create(input, contact);
@@ -198,23 +199,34 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .action(async (id: string, options: InvoiceOptions) => {
       const runtime = resolveRuntimeContext(invoices);
 
-      let input: InvoiceInput;
+      let input: InvoiceUpdateInput;
       let contact: ContactInput | { id: string } | undefined;
 
       if (options.data !== undefined) {
         const raw = await parseDataInput(options.data);
-        const contactData = isRecord(raw.contact) ? raw.contact : undefined;
-        contact = contactData as unknown as ContactInput | { id: string } | undefined;
+        contact = parseContactFromData(raw);
 
         const { contact: _, ...invoiceData } = raw;
-        input = invoiceData as unknown as InvoiceInput;
+        input = safeParse(InvoiceUpdateInputSchema, invoiceData, 'invoice update input');
       } else {
-        if (options.name === undefined && options.price === undefined) {
+        const hasAnyInvoiceFlag = options.name !== undefined || options.price !== undefined;
+        const hasAnyContactFlag =
+          options.contactId !== undefined || options.contactName !== undefined || options.contactEmail !== undefined;
+
+        if (!hasAnyInvoiceFlag && !hasAnyContactFlag) {
           throw new Error(
             'Provide --data or at least one flag: --name, --price, --contact-id, --contact-name, --contact-email.',
           );
         }
-        input = buildInvoiceInputFromFlags(options);
+
+        const invoiceRaw: UnknownRecord = {};
+        if (options.name !== undefined) {
+          invoiceRaw.name = options.name;
+        }
+        if (options.price !== undefined) {
+          invoiceRaw.items = [{ unitPrice: options.price }];
+        }
+        input = safeParse(InvoiceUpdateInputSchema, invoiceRaw, 'invoice update input');
         contact = buildContactFromFlags(options, false);
       }
 
@@ -240,7 +252,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .option('--language <code>', 'PDF language code (slo, cze, eng, ...)', 'slo')
     .action(async (id: string, options: { path?: string; language: string }) => {
       const runtime = resolveRuntimeContext(invoices);
-      const language = LanguageSchema.parse(options.language);
+      const language = safeParse(LanguageSchema, options.language, 'language') as Language;
       const pdf = await runtime.client.invoices.downloadPdf(id, language);
 
       const outputPath = options.path ?? `invoice-${id}.pdf`;
@@ -265,7 +277,8 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       const runtime = resolveRuntimeContext(invoices);
       let paymentInput: InvoicePaymentInput | undefined;
       if (options.data !== undefined) {
-        paymentInput = (await parseDataInput(options.data)) as unknown as InvoicePaymentInput;
+        const raw = await parseDataInput(options.data);
+        paymentInput = safeParse(InvoicePaymentInputSchema, raw, 'invoice payment input');
       }
       await runtime.client.invoices.pay(id, paymentInput);
       printVoidAction(runtime.output, 'invoices.pay', `Marked invoice ${id} as paid.`);

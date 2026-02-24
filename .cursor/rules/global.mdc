@@ -39,7 +39,6 @@ alwaysApply: true
 - Do not cast randomly between types, use proper types.
 - Do not cast like `as unknown as Type`, this is invalid forced type changing.
 - Prefer explicit `if`-based object construction over conditional object spreading for readability.
-- Usually simple truthy checks are enough in conditionals instead of directly comparing with `undefined` or `null`.
 
 ## Project Structure
 

@@ -1,9 +1,11 @@
 import { Command } from 'commander';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
-import { printSuccess } from '../output-format';
-import type { Contact, ContactInput } from '../../data/contact';
+import { printSuccess, printVoidAction } from '../output-format';
+import type { Contact, ContactInput, ContactUpdateInput } from '../../data/contact';
+import { ContactInputSchema, ContactUpdateInputSchema } from '../../data/contact';
 import type { ListResult, Result, UnknownRecord } from '../../core/types';
+import { safeParse } from '../../core/utils';
 import type { OutputFormat } from '../types';
 
 interface ContactOptions {
@@ -12,24 +14,33 @@ interface ContactOptions {
   email?: string;
 }
 
-function buildContactInputFromFlags(options: ContactOptions, requireName: boolean): ContactInput {
-  if (requireName && (options.name === undefined || options.name.trim() === '')) {
+function buildContactCreateInput(options: ContactOptions): ContactInput {
+  if (options.name === undefined || options.name.trim() === '') {
     throw new Error('Provide --name or use --data for contact payload.');
   }
 
-  const input: UnknownRecord = {};
-  if (options.name !== undefined) {
-    input.name = options.name;
-  }
+  const raw: UnknownRecord = { name: options.name };
   if (options.email !== undefined) {
-    input.email = options.email;
+    raw.email = options.email;
   }
 
-  if (Object.keys(input).length === 0) {
+  return safeParse(ContactInputSchema, raw, 'contact input');
+}
+
+function buildContactUpdateInput(options: ContactOptions): ContactUpdateInput {
+  const raw: UnknownRecord = {};
+  if (options.name !== undefined) {
+    raw.name = options.name;
+  }
+  if (options.email !== undefined) {
+    raw.email = options.email;
+  }
+
+  if (Object.keys(raw).length === 0) {
     throw new Error('Provide --data or at least one flag: --name, --email.');
   }
 
-  return input as unknown as ContactInput;
+  return safeParse(ContactUpdateInputSchema, raw, 'contact update input');
 }
 
 function printContactMutation(output: OutputFormat, action: string, verb: string, result: Result<Contact>): void {
@@ -69,14 +80,6 @@ function printContactList(output: OutputFormat, result: ListResult<Contact>): vo
   }
 }
 
-function printVoidAction(output: OutputFormat, action: string, message: string): void {
-  if (output === 'json') {
-    console.log(JSON.stringify({ ok: true, action }, null, 2));
-    return;
-  }
-  console.log(message);
-}
-
 export function registerContactCommands(rootProgram: Command): void {
   const contacts = rootProgram.command('contacts').description('Manage contacts.');
 
@@ -90,9 +93,10 @@ export function registerContactCommands(rootProgram: Command): void {
       const runtime = resolveRuntimeContext(contacts);
       let input: ContactInput;
       if (options.data !== undefined) {
-        input = (await parseDataInput(options.data)) as unknown as ContactInput;
+        const raw = await parseDataInput(options.data);
+        input = safeParse(ContactInputSchema, raw, 'contact input');
       } else {
-        input = buildContactInputFromFlags(options, true);
+        input = buildContactCreateInput(options);
       }
       const result = await runtime.client.contacts.create(input);
       printContactMutation(runtime.output, 'contacts.create', 'Created', result);
@@ -143,11 +147,12 @@ export function registerContactCommands(rootProgram: Command): void {
     .option('--email <email>', 'Contact email')
     .action(async (id: string, options: ContactOptions) => {
       const runtime = resolveRuntimeContext(contacts);
-      let input: ContactInput;
+      let input: ContactUpdateInput;
       if (options.data !== undefined) {
-        input = (await parseDataInput(options.data)) as unknown as ContactInput;
+        const raw = await parseDataInput(options.data);
+        input = safeParse(ContactUpdateInputSchema, raw, 'contact update input');
       } else {
-        input = buildContactInputFromFlags(options, false);
+        input = buildContactUpdateInput(options);
       }
       const result = await runtime.client.contacts.update(id, input);
       printContactMutation(runtime.output, 'contacts.update', 'Updated', result);

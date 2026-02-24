@@ -1,9 +1,11 @@
 import type { UnknownRecord } from '../core/types';
-import { emptyToUndefined, formatDate, nullToUndefined } from '../core/utils';
+import { emptyToUndefined, formatDate, nullToUndefined, safeParse } from '../core/utils';
+import { CurrencySchema } from './currency';
 import type { ApiInvoiceItemResponse, ApiInvoiceResponse } from './api';
-import type { Invoice, InvoiceInput, InvoiceItem, InvoiceItemInput } from './invoice';
+import type { Invoice, InvoiceInput, InvoiceItem, InvoiceItemInput, InvoiceUpdateInput } from './invoice';
+import { InvoiceFlagSchema, InvoiceStatusSchema, InvoiceTypeSchema, PaymentTypeSchema } from './invoice';
 
-const STATUS_LOOKUP: Record<string, Invoice['status']> = {
+const STATUS_LOOKUP: Record<string, string> = {
   '1': 'draft',
   '2': 'sent',
   '3': 'overdue',
@@ -35,19 +37,20 @@ export function invoiceItemFromApi(raw: ApiInvoiceItemResponse): InvoiceItem {
 export function invoiceFromApi(raw: ApiInvoiceResponse, rawItems: ApiInvoiceItemResponse[]): Invoice {
   const amount = parseFloat(raw.amount);
   const vatAmount = parseFloat(raw.vat);
+  const statusMapped = STATUS_LOOKUP[raw.status] ?? 'draft';
 
   return {
     id: raw.id,
     clientId: raw.client_id,
     name: raw.name,
-    type: raw.type as Invoice['type'],
-    status: STATUS_LOOKUP[raw.status] ?? ('draft' as Invoice['status']),
-    flag: raw.flag as Invoice['flag'],
+    type: safeParse(InvoiceTypeSchema, raw.type, 'invoice type'),
+    status: safeParse(InvoiceStatusSchema, statusMapped, 'invoice status'),
+    flag: safeParse(InvoiceFlagSchema, raw.flag, 'invoice flag'),
     totalWithoutVat: amount,
     totalWithVat: amount + vatAmount,
     vat: vatAmount,
-    invoiceCurrency: raw.invoice_currency as Invoice['invoiceCurrency'],
-    homeCurrency: raw.home_currency as Invoice['homeCurrency'],
+    invoiceCurrency: safeParse(CurrencySchema, raw.invoice_currency, 'invoice currency'),
+    homeCurrency: safeParse(CurrencySchema, raw.home_currency, 'home currency'),
     exchangeRate: raw.exchange_rate,
     invoiceNo: raw.invoice_no,
     invoiceNoFormatted: raw.invoice_no_formatted,
@@ -58,7 +61,7 @@ export function invoiceFromApi(raw: ApiInvoiceResponse, rawItems: ApiInvoiceItem
     modified: new Date(raw.modified),
     deliveryDate: new Date(raw.delivery ?? raw.created),
     dueDate: new Date(raw.due),
-    paymentType: nullToUndefined(raw.payment_type) as Invoice['paymentType'],
+    paymentType: raw.payment_type ? safeParse(PaymentTypeSchema, raw.payment_type, 'payment type') : undefined,
     headerComment: emptyToUndefined(raw.header_comment),
     internalComment: emptyToUndefined(raw.internal_comment),
     comment: emptyToUndefined(raw.comment),
@@ -71,37 +74,43 @@ export function invoiceFromApi(raw: ApiInvoiceResponse, rawItems: ApiInvoiceItem
 export function invoiceItemInputToApi(input: InvoiceItemInput): UnknownRecord {
   const result: UnknownRecord = {};
 
-  if (input.name) result.name = input.name;
-  if (input.description) result.description = input.description;
-  if (input.quantity) result.quantity = input.quantity;
-  if (input.unitOfMeasure) result.unit = input.unitOfMeasure;
-  if (input.unitPrice) result.unit_price = input.unitPrice;
-  if (input.tax) result.tax = input.tax;
-  if (input.discount) result.discount = input.discount;
+  if (input.name !== undefined) result.name = input.name;
+  if (input.description !== undefined) result.description = input.description;
+  if (input.quantity !== undefined) result.quantity = input.quantity;
+  if (input.unitOfMeasure !== undefined) result.unit = input.unitOfMeasure;
+  if (input.unitPrice !== undefined) result.unit_price = input.unitPrice;
+  if (input.tax !== undefined) result.tax = input.tax;
+  if (input.discount !== undefined) result.discount = input.discount;
 
   return result;
+}
+
+function invoiceFieldsToApi(input: InvoiceUpdateInput): UnknownRecord {
+  const invoice: UnknownRecord = {};
+
+  if (input.name !== undefined) invoice.name = input.name;
+  if (input.type !== undefined) invoice.type = input.type;
+  if (input.invoiceCurrency !== undefined) invoice.invoice_currency = input.invoiceCurrency;
+  if (input.variableSymbol !== undefined) invoice.variable = input.variableSymbol;
+  if (input.constantSymbol !== undefined) invoice.constant = input.constantSymbol;
+  if (input.specificSymbol !== undefined) invoice.specific = input.specificSymbol;
+  if (input.created !== undefined) invoice.created = formatDate(input.created);
+  if (input.deliveryDate !== undefined) invoice.delivery = formatDate(input.deliveryDate);
+  if (input.dueDate !== undefined) invoice.due = formatDate(input.dueDate);
+  if (input.paymentType !== undefined) invoice.payment_type = input.paymentType;
+  if (input.headerComment !== undefined) invoice.header_comment = input.headerComment;
+  if (input.internalComment !== undefined) invoice.internal_comment = input.internalComment;
+  if (input.comment !== undefined) invoice.comment = input.comment;
+  if (input.discount !== undefined) invoice.discount = input.discount;
+
+  return invoice;
 }
 
 export function invoiceInputToApi(input: InvoiceInput): {
   Invoice: UnknownRecord;
   InvoiceItem: UnknownRecord[];
 } {
-  const invoice: UnknownRecord = {};
-
-  if (input.name) invoice.name = input.name;
-  if (input.type) invoice.type = input.type;
-  if (input.invoiceCurrency) invoice.invoice_currency = input.invoiceCurrency;
-  if (input.variableSymbol) invoice.variable = input.variableSymbol;
-  if (input.constantSymbol) invoice.constant = input.constantSymbol;
-  if (input.specificSymbol) invoice.specific = input.specificSymbol;
-  if (input.created) invoice.created = formatDate(input.created);
-  if (input.deliveryDate) invoice.delivery = formatDate(input.deliveryDate);
-  if (input.dueDate) invoice.due = formatDate(input.dueDate);
-  if (input.paymentType) invoice.payment_type = input.paymentType;
-  if (input.headerComment) invoice.header_comment = input.headerComment;
-  if (input.internalComment) invoice.internal_comment = input.internalComment;
-  if (input.comment) invoice.comment = input.comment;
-  if (input.discount) invoice.discount = input.discount;
+  const invoice = invoiceFieldsToApi(input);
   if (input.markAsAlreadyPaid) invoice.already_paid = 1;
   if (input.markAsSent) invoice.mark_sent = 1;
 
@@ -109,4 +118,18 @@ export function invoiceInputToApi(input: InvoiceInput): {
     Invoice: invoice,
     InvoiceItem: input.items.map(invoiceItemInputToApi),
   };
+}
+
+export function invoiceUpdateInputToApi(input: InvoiceUpdateInput): {
+  Invoice: UnknownRecord;
+  InvoiceItem?: UnknownRecord[];
+} {
+  const invoice = invoiceFieldsToApi(input);
+  const result: { Invoice: UnknownRecord; InvoiceItem?: UnknownRecord[] } = { Invoice: invoice };
+
+  if (input.items) {
+    result.InvoiceItem = input.items.map(invoiceItemInputToApi);
+  }
+
+  return result;
 }

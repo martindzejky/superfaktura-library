@@ -1,12 +1,12 @@
 import { HttpClient } from '../core/http-client';
 import { toNamedQueryPath } from '../core/query-path';
 import type { BinaryResult, ListQuery, ListResult, Result, UnknownRecord } from '../core/types';
-import { formatDate, isRecord } from '../core/utils';
+import { formatDate, isRecord, safeParse } from '../core/utils';
 import { ApiInvoiceItemResponseSchema, ApiInvoiceResponseSchema } from '../data/api';
 import type { ContactInput } from '../data/contact';
 import { contactInputToApi } from '../data/contact-adapter';
-import type { Invoice, InvoiceInput } from '../data/invoice';
-import { invoiceFromApi, invoiceInputToApi } from '../data/invoice-adapter';
+import type { Invoice, InvoiceInput, InvoiceUpdateInput } from '../data/invoice';
+import { invoiceFromApi, invoiceInputToApi, invoiceUpdateInputToApi } from '../data/invoice-adapter';
 import type { InvoicePaymentInput } from '../data/invoice-payment';
 import type { Language } from '../data/language';
 
@@ -19,10 +19,10 @@ function extractInvoice(data: UnknownRecord): Invoice {
   }
 
   const rawItems = Array.isArray(nested.InvoiceItem) ? nested.InvoiceItem : [];
-  const parsedInvoice = ApiInvoiceResponseSchema.parse(rawInvoice);
+  const parsedInvoice = safeParse(ApiInvoiceResponseSchema, rawInvoice, 'API invoice response');
   const parsedItems = rawItems
     .filter((item): item is UnknownRecord => isRecord(item))
-    .map((item) => ApiInvoiceItemResponseSchema.parse(item));
+    .map((item) => safeParse(ApiInvoiceItemResponseSchema, item, 'API invoice item response'));
 
   return invoiceFromApi(parsedInvoice, parsedItems);
 }
@@ -69,10 +69,10 @@ export class InvoicesApiImpl {
       if (!isRecord(rawInvoice)) continue;
 
       const rawInvoiceItems = Array.isArray(entry.InvoiceItem) ? entry.InvoiceItem : [];
-      const parsedInvoice = ApiInvoiceResponseSchema.parse(rawInvoice);
+      const parsedInvoice = safeParse(ApiInvoiceResponseSchema, rawInvoice, 'API invoice response');
       const parsedItems = rawInvoiceItems
         .filter((item): item is UnknownRecord => isRecord(item))
-        .map((item) => ApiInvoiceItemResponseSchema.parse(item));
+        .map((item) => safeParse(ApiInvoiceItemResponseSchema, item, 'API invoice item response'));
 
       items.push(invoiceFromApi(parsedInvoice, parsedItems));
     }
@@ -87,23 +87,28 @@ export class InvoicesApiImpl {
     };
   }
 
-  async update(id: string, input: InvoiceInput, contact?: ContactInput | { id: string }): Promise<Result<Invoice>> {
-    const { Invoice, InvoiceItem } = invoiceInputToApi(input);
-    Invoice.id = id;
+  async update(
+    id: string,
+    input: InvoiceUpdateInput,
+    contact?: ContactInput | { id: string },
+  ): Promise<Result<Invoice>> {
+    const payload = invoiceUpdateInputToApi(input);
+    payload.Invoice.id = id;
 
-    let Client: UnknownRecord = {};
-    if (contact) {
-      Client =
+    const body: UnknownRecord = { Invoice: payload.Invoice };
+
+    if (payload.InvoiceItem !== undefined) {
+      body.InvoiceItem = payload.InvoiceItem;
+    }
+
+    if (contact !== undefined) {
+      body.Client =
         'id' in contact && typeof contact.id === 'string'
           ? { id: contact.id }
           : contactInputToApi(contact as ContactInput).Client;
     }
 
-    const result = await this.httpClient.request('POST', '/invoices/edit', {
-      Invoice,
-      InvoiceItem,
-      Client,
-    });
+    const result = await this.httpClient.request('POST', '/invoices/edit', body);
     return { statusCode: result.statusCode, data: extractInvoice(result.data) };
   }
 
@@ -114,10 +119,10 @@ export class InvoicesApiImpl {
   async pay(id: string, input: InvoicePaymentInput = {}): Promise<void> {
     const body: UnknownRecord = { invoice_id: id };
 
-    if (input.amount) body.amount = input.amount;
-    if (input.currency) body.currency = input.currency;
-    if (input.date) body.date = formatDate(input.date);
-    if (input.paymentType) body.payment_type = input.paymentType;
+    if (input.amount !== undefined) body.amount = input.amount;
+    if (input.currency !== undefined) body.currency = input.currency;
+    if (input.date !== undefined) body.date = formatDate(input.date);
+    if (input.paymentType !== undefined) body.payment_type = input.paymentType;
 
     await this.httpClient.request('POST', '/invoice_payments/add/ajax%3A1/api%3A1', {
       InvoicePayment: body,
