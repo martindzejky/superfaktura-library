@@ -26,12 +26,16 @@ export class HttpClient {
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
+      const headers: Record<string, string> = {
+        Authorization: this.authHeader,
+      };
+      if (body) {
+        headers['Content-Type'] = 'application/json';
+      }
+
       const requestInit: RequestInit = {
         method,
-        headers: {
-          Authorization: this.authHeader,
-          ...(body ? { 'Content-Type': 'application/json' } : {}),
-        },
+        headers,
         signal: controller.signal,
       };
 
@@ -97,11 +101,14 @@ export class HttpClient {
       const buffer = new Uint8Array(await response.arrayBuffer());
       const contentType = response.headers.get('content-type') ?? undefined;
 
-      return {
+      const binaryResult: BinaryResult = {
         statusCode: response.status,
         data: buffer,
-        ...(contentType ? { contentType } : {}),
       };
+      if (contentType) {
+        binaryResult.contentType = contentType;
+      }
+      return binaryResult;
     } finally {
       clearTimeout(timeout);
     }

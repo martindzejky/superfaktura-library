@@ -23,11 +23,15 @@ export function createClient(config: ClientConfig = {}) {
     throw new Error('Missing API key. Provide config.apiKey or SUPERFAKTURA_API_KEY.');
   }
 
-  const authHeader = createAuthHeader({
+  const authConfig: { apiEmail: string; apiKey: string; companyId?: number } = {
     apiEmail,
     apiKey,
-    ...(companyId !== undefined ? { companyId } : {}),
-  });
+  };
+  if (companyId !== undefined) {
+    authConfig.companyId = companyId;
+  }
+
+  const authHeader = createAuthHeader(authConfig);
 
   const httpClient = new HttpClient({
     baseUrl,
