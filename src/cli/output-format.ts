@@ -1,7 +1,15 @@
-import { ApiError, HttpError, ValidationError } from '../core/errors';
+import { ApiError, HttpError, SchemaError, ValidationError } from '../core/errors';
 import type { Result } from '../core/types';
 import { normalizeErrorMessages, toRecord } from '../core/utils';
 import type { OutputFormat } from './types';
+
+export function printVoidAction(format: OutputFormat, action: string, message: string): void {
+  if (format === 'json') {
+    console.log(JSON.stringify({ ok: true, action }, null, 2));
+    return;
+  }
+  console.log(message);
+}
 
 export function printSuccess(format: OutputFormat, action: string, result: Result<unknown>): void {
   if (format === 'json') {
@@ -28,7 +36,8 @@ export function printError(format: OutputFormat, error: unknown): void {
   const statusCode = getStatusCode(error);
   const errorData = getErrorData(error);
   const apiMessages = getApiMessages(errorData);
-  const validationDetails = error instanceof ValidationError ? error.details : undefined;
+  const schemaDetails = error instanceof SchemaError ? error.details : undefined;
+  const validationDetails = error instanceof ValidationError ? error.details : schemaDetails;
   const hasValidationDetails = validationDetails !== undefined && validationDetails.length > 0;
   const uniqueValidationDetails = validationDetails ? [...new Set(validationDetails)] : undefined;
   const apiMessagesWithoutDetails = uniqueValidationDetails

@@ -1,3 +1,5 @@
+import type { ZodType } from 'zod';
+import { SchemaError } from './errors';
 import type { UnknownRecord } from './types';
 
 export function nullToUndefined<T>(value: T | null): T | undefined {
@@ -43,6 +45,14 @@ export function parseCompanyId(value: string | number | undefined): number | und
     }
   }
   throw new Error('Invalid company ID value.');
+}
+
+export function safeParse<T>(schema: ZodType<T>, data: unknown, label: string): T {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    throw new SchemaError(label, result.error);
+  }
+  return result.data;
 }
 
 export function normalizeErrorMessages(errorMessage: unknown): string[] {

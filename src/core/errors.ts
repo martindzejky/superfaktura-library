@@ -1,3 +1,4 @@
+import type { ZodError } from 'zod';
 import type { UnknownRecord } from './types';
 
 export class HttpError extends Error {
@@ -38,5 +39,18 @@ export class NotFoundError extends Error {
   constructor() {
     super('Requested resource was not found.');
     this.name = 'NotFoundError';
+  }
+}
+
+export class SchemaError extends Error {
+  readonly zodError: ZodError;
+  readonly details: string[];
+
+  constructor(label: string, zodError: ZodError) {
+    const details = zodError.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
+    super(`Invalid ${label}: ${details.join('; ')}`);
+    this.name = 'SchemaError';
+    this.zodError = zodError;
+    this.details = details;
   }
 }
