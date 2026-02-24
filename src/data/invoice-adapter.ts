@@ -1,5 +1,5 @@
 import type { UnknownRecord } from '../core/types';
-import { emptyToUndefined, formatDate, nullToUndefined, safeParse } from '../core/utils';
+import { emptyToUndefined, formatDate, nullToUndefined, safeParseDate, safeParseFloat, safeParse } from '../core/utils';
 import { CurrencySchema } from './currency';
 import type { ApiInvoiceItemResponse, ApiInvoiceResponse } from './api';
 import type { Invoice, InvoiceInput, InvoiceItem, InvoiceItemInput, InvoiceUpdateInput } from './invoice';
@@ -18,7 +18,7 @@ export function invoiceItemFromApi(raw: ApiInvoiceItemResponse): InvoiceItem {
     invoiceId: raw.invoice_id,
     name: raw.name,
     description: emptyToUndefined(raw.description),
-    quantity: raw.quantity !== null ? parseFloat(raw.quantity) : undefined,
+    quantity: raw.quantity !== null ? safeParseFloat(raw.quantity, 'invoice item quantity') : undefined,
     unitOfMeasure: emptyToUndefined(raw.unit),
     unitPrice: raw.unit_price,
     tax: raw.tax,
@@ -35,8 +35,8 @@ export function invoiceItemFromApi(raw: ApiInvoiceItemResponse): InvoiceItem {
 }
 
 export function invoiceFromApi(raw: ApiInvoiceResponse, rawItems: ApiInvoiceItemResponse[]): Invoice {
-  const amount = parseFloat(raw.amount);
-  const vatAmount = parseFloat(raw.vat);
+  const amount = safeParseFloat(raw.amount, 'invoice amount');
+  const vatAmount = safeParseFloat(raw.vat, 'invoice vat');
   const statusMapped = STATUS_LOOKUP[raw.status] ?? 'draft';
 
   return {
@@ -57,17 +57,17 @@ export function invoiceFromApi(raw: ApiInvoiceResponse, rawItems: ApiInvoiceItem
     variableSymbol: emptyToUndefined(raw.variable),
     constantSymbol: emptyToUndefined(raw.constant),
     specificSymbol: emptyToUndefined(raw.specific),
-    created: new Date(raw.created),
-    modified: new Date(raw.modified),
-    deliveryDate: new Date(raw.delivery ?? raw.created),
-    dueDate: new Date(raw.due),
+    created: safeParseDate(raw.created, 'invoice created'),
+    modified: safeParseDate(raw.modified, 'invoice modified'),
+    deliveryDate: safeParseDate(raw.delivery ?? raw.created, 'invoice delivery date'),
+    dueDate: safeParseDate(raw.due, 'invoice due date'),
     paymentType: raw.payment_type ? safeParse(PaymentTypeSchema, raw.payment_type, 'payment type') : undefined,
     headerComment: emptyToUndefined(raw.header_comment),
     internalComment: emptyToUndefined(raw.internal_comment),
     comment: emptyToUndefined(raw.comment),
-    discount: parseFloat(raw.discount),
+    discount: safeParseFloat(raw.discount, 'invoice discount'),
     token: raw.token,
-    items: rawItems.map(invoiceItemFromApi) as [InvoiceItem, ...InvoiceItem[]],
+    items: rawItems.map(invoiceItemFromApi),
   };
 }
 

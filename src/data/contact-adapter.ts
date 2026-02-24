@@ -1,5 +1,12 @@
 import type { UnknownRecord } from '../core/types';
-import { emptyToUndefined, nullToUndefined, safeParse } from '../core/utils';
+import {
+  emptyToUndefined,
+  nullToUndefined,
+  safeParseDate,
+  safeParseFloat,
+  safeParseInt,
+  safeParse,
+} from '../core/utils';
 import { CurrencySchema } from './currency';
 import type { ApiClientResponse } from './api';
 import type { Contact, ContactInput, ContactUpdateInput } from './contact';
@@ -33,8 +40,8 @@ export function contactFromApi(raw: ApiClientResponse): Contact {
     email: emptyToUndefined(raw.email),
     defaultCurrency,
     defaultVariableSymbol: emptyToUndefined(raw.default_variable),
-    defaultDiscount: raw.discount !== null ? parseFloat(raw.discount) : undefined,
-    defaultDueDays: raw.due_date !== null ? parseInt(raw.due_date, 10) : undefined,
+    defaultDiscount: raw.discount !== null ? safeParseFloat(raw.discount, 'contact discount') : undefined,
+    defaultDueDays: raw.due_date !== null ? safeParseInt(raw.due_date, 'contact due days') : undefined,
     bankAccount: emptyToUndefined(raw.bank_account),
     bankAccountPrefix: emptyToUndefined(raw.bank_account_prefix),
     bankCode: emptyToUndefined(raw.bank_code),
@@ -42,8 +49,8 @@ export function contactFromApi(raw: ApiClientResponse): Contact {
     swift: emptyToUndefined(raw.swift),
     comment: emptyToUndefined(raw.comment),
     uuid: emptyToUndefined(raw.uuid),
-    created: new Date(raw.created),
-    modified: new Date(raw.modified),
+    created: safeParseDate(raw.created, 'contact created'),
+    modified: safeParseDate(raw.modified, 'contact modified'),
   };
 }
 

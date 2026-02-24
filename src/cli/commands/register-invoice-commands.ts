@@ -12,7 +12,7 @@ import { InvoicePaymentInputSchema } from '../../data/invoice-payment';
 import type { ListResult, Result, UnknownRecord } from '../../core/types';
 import { isRecord, safeParse } from '../../core/utils';
 import type { OutputFormat } from '../types';
-import { LanguageSchema, type Language } from '../../data/language';
+import { LanguageSchema } from '../../data/language';
 
 interface InvoiceOptions {
   data?: string;
@@ -39,8 +39,8 @@ function buildContactFromFlags(
     return undefined;
   }
 
-  if (hasContactId) {
-    return { id: options.contactId! };
+  if (options.contactId !== undefined) {
+    return { id: options.contactId };
   }
 
   const raw: UnknownRecord = {};
@@ -252,7 +252,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .option('--language <code>', 'PDF language code (slo, cze, eng, ...)', 'slo')
     .action(async (id: string, options: { path?: string; language: string }) => {
       const runtime = resolveRuntimeContext(invoices);
-      const language = safeParse(LanguageSchema, options.language, 'language') as Language;
+      const language = safeParse(LanguageSchema, options.language, 'language');
       const pdf = await runtime.client.invoices.downloadPdf(id, language);
 
       const outputPath = options.path ?? `invoice-${id}.pdf`;

@@ -1,5 +1,5 @@
 import { ApiError, HttpError, SchemaError, ValidationError } from '../core/errors';
-import type { Result } from '../core/types';
+import type { Result, UnknownRecord } from '../core/types';
 import { normalizeErrorMessages, toRecord } from '../core/utils';
 import type { OutputFormat } from './types';
 
@@ -47,22 +47,24 @@ export function printError(format: OutputFormat, error: unknown): void {
     errorData !== undefined && apiMessages.length === 0 ? JSON.stringify(errorData, null, 2) : undefined;
 
   if (format === 'json') {
-    console.error(
-      JSON.stringify(
-        {
-          ok: false,
-          ...(statusCode !== undefined ? { status: statusCode } : {}),
-          error: {
-            message,
-            ...(apiMessagesWithoutDetails.length > 0 ? { apiMessages: apiMessagesWithoutDetails } : {}),
-            ...(hasValidationDetails && uniqueValidationDetails ? { details: uniqueValidationDetails } : {}),
-            ...(errorData !== undefined ? { data: errorData } : {}),
-          },
-        },
-        null,
-        2,
-      ),
-    );
+    const errorObj: UnknownRecord = { message };
+    if (apiMessagesWithoutDetails.length > 0) {
+      errorObj.apiMessages = apiMessagesWithoutDetails;
+    }
+    if (hasValidationDetails && uniqueValidationDetails) {
+      errorObj.details = uniqueValidationDetails;
+    }
+    if (errorData !== undefined) {
+      errorObj.data = errorData;
+    }
+
+    const output: UnknownRecord = { ok: false };
+    if (statusCode !== undefined) {
+      output.status = statusCode;
+    }
+    output.error = errorObj;
+
+    console.error(JSON.stringify(output, null, 2));
     return;
   }
 

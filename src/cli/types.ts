@@ -1,4 +1,4 @@
-import type { createClient } from '../client/create-client';
+import type { Client } from '../client/create-client';
 
 export type OutputFormat = 'text' | 'json';
 
@@ -12,5 +12,5 @@ export interface GlobalCliOptions {
 
 export interface RuntimeContext {
   output: OutputFormat;
-  client: ReturnType<typeof createClient>;
+  client: Client;
 }

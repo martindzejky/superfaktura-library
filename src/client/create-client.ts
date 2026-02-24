@@ -8,7 +8,12 @@ import { parseCompanyId } from '../core/utils';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
-export function createClient(config: ClientConfig = {}) {
+export interface Client {
+  contacts: ContactsApiImpl;
+  invoices: InvoicesApiImpl;
+}
+
+export function createClient(config: ClientConfig = {}): Client {
   const apiEmail = config.apiEmail ?? process.env.SUPERFAKTURA_API_EMAIL;
   const apiKey = config.apiKey ?? process.env.SUPERFAKTURA_API_KEY;
   const baseUrl = config.baseUrl ?? process.env.SUPERFAKTURA_API_URL ?? DEFAULT_BASE_URL;

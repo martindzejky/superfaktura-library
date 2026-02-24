@@ -1,4 +1,5 @@
 export { createClient } from './client/create-client';
+export type { Client } from './client/create-client';
 export { ApiError, HttpError, NotFoundError, SchemaError, ValidationError } from './core/errors';
 export type { BinaryResult, ClientConfig, ListQuery, ListResult, Result } from './core/types';
 export type { Contact, ContactInput, ContactUpdateInput } from './data/contact';

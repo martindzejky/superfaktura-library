@@ -20,6 +20,30 @@ export function formatDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+export function safeParseFloat(value: string, label: string): number {
+  const parsed = parseFloat(value);
+  if (Number.isNaN(parsed)) {
+    throw new Error(`Invalid numeric value for ${label}: "${value}"`);
+  }
+  return parsed;
+}
+
+export function safeParseInt(value: string, label: string): number {
+  const parsed = parseInt(value, 10);
+  if (Number.isNaN(parsed)) {
+    throw new Error(`Invalid integer value for ${label}: "${value}"`);
+  }
+  return parsed;
+}
+
+export function safeParseDate(value: string, label: string): Date {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`Invalid date value for ${label}: "${value}"`);
+  }
+  return date;
+}
+
 export function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
