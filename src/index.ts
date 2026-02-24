@@ -5,13 +5,13 @@ export type { Contact, ContactInput } from './data/contact';
 export type { Currency } from './data/currency';
 export type {
   Invoice,
-  InvoiceFlagSchema as InvoiceFlag,
+  InvoiceFlag,
   InvoiceInput,
   InvoiceItem,
   InvoiceItemInput,
-  InvoiceStatusSchema as InvoiceStatus,
-  InvoiceTypeSchema as InvoiceType,
-  PaymentTypeSchema as PaymentType,
+  InvoiceStatus,
+  InvoiceType,
+  PaymentType,
 } from './data/invoice';
 export type { InvoicePaymentInput } from './data/invoice-payment';
 export type { Language } from './data/language';
