@@ -76,8 +76,8 @@ export const InvoiceItemSchema = InvoiceItemInputBase.extend({
 
 export type InvoiceItem = z.infer<typeof InvoiceItemSchema>;
 
-// fields that can be specified when creating or updating an invoice
-export const InvoiceInputSchema = z.object({
+// shared invoice fields between input and output (no write-only flags)
+const InvoiceBaseSchema = z.object({
   name: z.string().optional(), // invoice name / title
   type: InvoiceTypeSchema.optional(), // invoice type, defaults to "regular"
   invoiceCurrency: CurrencySchema.optional(), // currency of the invoice
@@ -92,6 +92,10 @@ export const InvoiceInputSchema = z.object({
   internalComment: z.string().optional(), // internal comment (not shown on invoice)
   comment: z.string().optional(), // general comment
   discount: z.number().optional(), // global discount percentage, defaults to 0
+});
+
+// fields for creating an invoice (extends base with write-only flags and required items)
+export const InvoiceInputSchema = InvoiceBaseSchema.extend({
   markAsAlreadyPaid: z.boolean().optional(), // mark invoice as already paid on creation
   markAsSent: z.boolean().optional(), // mark invoice as sent via email on creation
   items: z.array(InvoiceItemInputSchema).nonempty(), // invoice line items (at least one required)
@@ -99,8 +103,15 @@ export const InvoiceInputSchema = z.object({
 
 export type InvoiceInput = z.infer<typeof InvoiceInputSchema>;
 
-// full invoice as returned by the library, extends the input with read-only fields
-export const InvoiceSchema = InvoiceInputSchema.extend({
+// fields for updating an invoice (everything optional, items optional too)
+export const InvoiceUpdateInputSchema = InvoiceBaseSchema.partial().extend({
+  items: z.array(InvoiceItemInputSchema).nonempty().optional(), // invoice line items
+});
+
+export type InvoiceUpdateInput = z.infer<typeof InvoiceUpdateInputSchema>;
+
+// full invoice as returned by the library (extends base with read-only fields)
+export const InvoiceSchema = InvoiceBaseSchema.extend({
   id: z.string(), // unique invoice ID
   clientId: z.string(), // linked client/contact ID
   name: z.string(), // resolved invoice name

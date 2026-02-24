@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CurrencySchema } from './currency';
 
-// fields that can be specified when creating or updating a contact
+// fields that can be specified when creating a contact (name is required)
 export const ContactInputSchema = z.object({
   name: z.string(), // client name (required)
   ico: z.string().optional(), // IČO - company registration number
@@ -33,6 +33,11 @@ export const ContactInputSchema = z.object({
 });
 
 export type ContactInput = z.infer<typeof ContactInputSchema>;
+
+// fields that can be specified when updating a contact (everything is optional)
+export const ContactUpdateInputSchema = ContactInputSchema.partial();
+
+export type ContactUpdateInput = z.infer<typeof ContactUpdateInputSchema>;
 
 // full contact as returned by the library, extends the input with read-only fields
 export const ContactSchema = ContactInputSchema.extend({
