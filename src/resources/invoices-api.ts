@@ -4,11 +4,20 @@ import type { BinaryResult, ListQuery, ListResult, Result, UnknownRecord } from 
 import { formatDate, isRecord, safeParse } from '../core/utils';
 import { ApiInvoiceItemResponseSchema, ApiInvoiceResponseSchema } from '../data/api';
 import type { ContactInput } from '../data/contact';
+import { ContactInputSchema } from '../data/contact';
 import { contactInputToApi } from '../data/contact-adapter';
 import type { Invoice, InvoiceInput, InvoiceUpdateInput } from '../data/invoice';
 import { invoiceFromApi, invoiceInputToApi, invoiceUpdateInputToApi } from '../data/invoice-adapter';
 import type { InvoicePaymentInput } from '../data/invoice-payment';
 import type { Language } from '../data/language';
+
+function resolveContactPayload(contact: ContactInput | { id: string }): UnknownRecord {
+  if ('id' in contact && typeof contact.id === 'string') {
+    return { id: contact.id };
+  }
+  const validated = safeParse(ContactInputSchema, contact, 'contact input');
+  return contactInputToApi(validated).Client;
+}
 
 function extractInvoice(data: UnknownRecord): Invoice {
   const nested = isRecord(data.data) ? data.data : data;
@@ -36,10 +45,7 @@ export class InvoicesApiImpl {
 
   async create(input: InvoiceInput, contact: ContactInput | { id: string }): Promise<Result<Invoice>> {
     const { Invoice, InvoiceItem } = invoiceInputToApi(input);
-    const Client =
-      'id' in contact && typeof contact.id === 'string'
-        ? { id: contact.id }
-        : contactInputToApi(contact as ContactInput).Client;
+    const Client = resolveContactPayload(contact);
 
     const result = await this.httpClient.request('POST', '/invoices/create', {
       Invoice,
@@ -102,10 +108,7 @@ export class InvoicesApiImpl {
     }
 
     if (contact !== undefined) {
-      body.Client =
-        'id' in contact && typeof contact.id === 'string'
-          ? { id: contact.id }
-          : contactInputToApi(contact as ContactInput).Client;
+      body.Client = resolveContactPayload(contact);
     }
 
     const result = await this.httpClient.request('POST', '/invoices/edit', body);
