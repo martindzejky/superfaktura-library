@@ -43,12 +43,19 @@ const client = createClient({
   apiKey: process.env.SUPERFAKTURA_API_KEY,
 });
 
-const created = await client.contacts.create({
+// Create a contact
+const { data, statusCode } = await client.contacts.create({
   name: 'ACME s.r.o.',
   email: 'billing@acme.test',
 });
 
-const invoice = await client.invoices.create(
+// Update a contact, returns void, throws on error
+await client.contacts.update(contact.id, {
+  email: 'new-billing@acme.test',
+});
+
+// Create an invoice
+const { data, statusCode } = await client.invoices.create(
   {
     name: 'Invoice 2026-001',
     invoiceCurrency: 'EUR',
@@ -61,20 +68,31 @@ const invoice = await client.invoices.create(
       },
     ],
   },
-  {
-    name: 'ACME s.r.o.',
-    email: 'billing@acme.test',
-  },
+  { id: contact.id },
 );
 
-await client.invoices.pay('123', {
+// Update an invoice, returns void, throws on error
+await client.invoices.update(invoice.id, {
+  name: 'Invoice 2026-001 (revised)',
+});
+
+// Pay, mark as sent
+await client.invoices.pay(invoice.id, {
   amount: 2.5,
   paymentType: 'transfer',
 });
+await client.invoices.markAsSent(invoice.id);
 
-await client.invoices.markAsSent('123');
+// Deleting
+await client.invoices.remove(invoice.id);
+await client.contacts.remove(contact.id);
 
-const pdf = await client.invoices.downloadPdf('123', 'slo');
+// Download invoice PDF (slo = Slovak language)
+const pdf = await client.invoices.downloadPdf(invoice.id, 'slo');
+
+// List and get return ListResult<T> and Result<T>
+const { ... } = await client.contacts.list({ page: 1, perPage: 10 });
+const { data, statusCode } = await client.contacts.getById(contact.id);
 ```
 
 ## CLI usage
@@ -98,6 +116,9 @@ npx superfaktura contacts create \
 # Update contact with simple flags
 npx superfaktura contacts update 123 --email "new-email@acme.test"
 
+# Delete contact
+npx superfaktura contacts delete 123
+
 # Create invoice with simple flags (price + contact via ID)
 npx superfaktura invoices create --price 120 --contact-id 123
 
@@ -106,6 +127,9 @@ npx superfaktura invoices create \
   --price 120 \
   --contact-name "ACME s.r.o." \
   --contact-email "billing@acme.test"
+
+# Update invoice name only
+npx superfaktura invoices update 123 --name "New name"
 
 # Update invoice with simple flags (replaces items with one unit_price item)
 npx superfaktura invoices update 123 --price 150
@@ -125,6 +149,9 @@ npx superfaktura invoices pay 123 \
 
 # Mark/unmark invoice as sent
 npx superfaktura invoices mark-sent 123
+
+# Delete invoice
+npx superfaktura invoices delete 123
 
 # JSON output for automations/agents
 npx superfaktura invoices get 123 --output json
