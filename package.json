@@ -1,6 +1,6 @@
 {
   "name": "superfaktura-library",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simple SuperFaktura SDK and CLI for contacts and invoices.",
   "type": "module",
   "engines": {
