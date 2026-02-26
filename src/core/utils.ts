@@ -2,10 +2,6 @@ import type { ZodType } from 'zod';
 import { SchemaError } from './errors';
 import type { UnknownRecord } from './types';
 
-export function nullToUndefined<T>(value: T | null): T | undefined {
-  return value === null ? undefined : value;
-}
-
 export function emptyToUndefined(value: string | null): string | undefined {
   if (value === null || value === '') {
     return undefined;

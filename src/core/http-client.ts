@@ -16,7 +16,7 @@ export class HttpClient {
   private readonly timeoutMs: number;
 
   constructor(config: HttpClientConfig) {
-    this.baseUrl = config.baseUrl;
+    this.baseUrl = config.baseUrl.replace(/\/+$/, ''); // remove trailing slashes
     this.authHeader = config.authHeader;
     this.timeoutMs = config.timeoutMs;
   }

@@ -286,7 +286,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
 
   invoices
     .command('mark-sent')
-    .description('Toggle invoice sent flag by ID.')
+    .description('Mark an invoice as sent by ID.')
     .argument('<id>', 'Invoice ID')
     .action(async (id: string) => {
       const runtime = resolveRuntimeContext(invoices);

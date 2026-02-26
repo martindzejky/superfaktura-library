@@ -1,5 +1,5 @@
 import type { UnknownRecord } from '../core/types';
-import { emptyToUndefined, formatDate, nullToUndefined, safeParseDate, safeParseFloat, safeParse } from '../core/utils';
+import { emptyToUndefined, formatDate, safeParseDate, safeParseFloat, safeParse } from '../core/utils';
 import { CurrencySchema } from './currency';
 import type { ApiInvoiceItemResponse, ApiInvoiceResponse } from './api';
 import type { Invoice, InvoiceInput, InvoiceItem, InvoiceItemInput, InvoiceUpdateInput } from './invoice';
@@ -40,7 +40,7 @@ export function invoiceFromApi(raw: ApiInvoiceResponse, rawItems: ApiInvoiceItem
   const vatAmount = safeParseFloat(raw.vat, 'invoice vat');
   const statusMapped = STATUS_LOOKUP[raw.status] ?? 'draft';
 
-  return {
+  const invoice: Invoice = {
     id: raw.id,
     clientId: raw.client_id,
     name: raw.name,
@@ -68,8 +68,14 @@ export function invoiceFromApi(raw: ApiInvoiceResponse, rawItems: ApiInvoiceItem
     comment: emptyToUndefined(raw.comment),
     discount: safeParseFloat(raw.discount, 'invoice discount'),
     token: raw.token,
-    items: rawItems.map(invoiceItemFromApi),
+    items: rawItems.map(invoiceItemFromApi) as [InvoiceItem, ...InvoiceItem[]],
   };
+
+  if (invoice.items.length === 0) {
+    throw new Error('Unexpected API response: invoice has no items.');
+  }
+
+  return invoice;
 }
 
 export function invoiceItemInputToApi(input: InvoiceItemInput): UnknownRecord {

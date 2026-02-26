@@ -1,12 +1,5 @@
 import type { UnknownRecord } from '../core/types';
-import {
-  emptyToUndefined,
-  nullToUndefined,
-  safeParseDate,
-  safeParseFloat,
-  safeParseInt,
-  safeParse,
-} from '../core/utils';
+import { emptyToUndefined, safeParseDate, safeParseFloat, safeParseInt, safeParse } from '../core/utils';
 import { CurrencySchema } from './currency';
 import type { ApiClientResponse } from './api';
 import type { Contact, ContactInput, ContactUpdateInput } from './contact';
@@ -68,14 +61,15 @@ function contactFieldsToApi(input: ContactUpdateInput): UnknownRecord {
   if (input.zip !== undefined) client.zip = input.zip;
   if (input.state !== undefined) client.state = input.state;
   if (input.country !== undefined) client.country = input.country;
-  if (input.countryId !== undefined) client.country_id = parseInt(input.countryId, 10);
+  if (input.countryId !== undefined) client.country_id = safeParseInt(input.countryId, 'country ID');
   if (input.deliveryName !== undefined) client.delivery_name = input.deliveryName;
   if (input.deliveryAddress !== undefined) client.delivery_address = input.deliveryAddress;
   if (input.deliveryCity !== undefined) client.delivery_city = input.deliveryCity;
   if (input.deliveryZip !== undefined) client.delivery_zip = input.deliveryZip;
   if (input.deliveryState !== undefined) client.delivery_state = input.deliveryState;
   if (input.deliveryCountry !== undefined) client.delivery_country = input.deliveryCountry;
-  if (input.deliveryCountryId !== undefined) client.delivery_country_id = parseInt(input.deliveryCountryId, 10);
+  if (input.deliveryCountryId !== undefined)
+    client.delivery_country_id = safeParseInt(input.deliveryCountryId, 'delivery country ID');
   if (input.deliveryPhone !== undefined) client.delivery_phone = input.deliveryPhone;
   if (input.phone !== undefined) client.phone = input.phone;
   if (input.email !== undefined) client.email = input.email;

@@ -15,8 +15,8 @@ npm install superfaktura-library
 For local development in this repository:
 
 ```bash
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 ## Environment variables
