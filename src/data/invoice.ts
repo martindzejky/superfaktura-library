@@ -29,10 +29,6 @@ export const InvoiceStatusSchema = z.enum(['draft', 'sent', 'overdue', 'paid']);
 
 export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>;
 
-export const InvoiceFlagSchema = z.enum(['issued', 'partially_paid', 'paid', 'overdue']);
-
-export type InvoiceFlag = z.infer<typeof InvoiceFlagSchema>;
-
 // fields that can be specified when creating or updating an invoice item
 const InvoiceItemInputBase = z.object({
   description: z.string().optional(), // item description
@@ -117,7 +113,6 @@ export const InvoiceSchema = InvoiceBaseSchema.extend({
   name: z.string(), // resolved invoice name
   type: InvoiceTypeSchema, // resolved invoice type
   status: InvoiceStatusSchema, // invoice status
-  flag: InvoiceFlagSchema, // invoice flag
   totalWithoutVat: z.number(), // total amount without VAT (computed)
   totalWithVat: z.number(), // total amount with VAT (computed)
   vat: z.number(), // total VAT amount (computed)

@@ -3,7 +3,7 @@ import { emptyToUndefined, formatDate, safeParseDate, safeParseFloat, safeParse 
 import { CurrencySchema } from './currency';
 import type { ApiInvoiceItemResponse, ApiInvoiceResponse } from './api';
 import type { Invoice, InvoiceInput, InvoiceItem, InvoiceItemInput, InvoiceUpdateInput } from './invoice';
-import { InvoiceFlagSchema, InvoiceStatusSchema, InvoiceTypeSchema, PaymentTypeSchema } from './invoice';
+import { InvoiceStatusSchema, InvoiceTypeSchema, PaymentTypeSchema } from './invoice';
 
 const STATUS_LOOKUP: Record<string, string> = {
   '1': 'draft',
@@ -46,7 +46,6 @@ export function invoiceFromApi(raw: ApiInvoiceResponse, rawItems: ApiInvoiceItem
     name: raw.name,
     type: safeParse(InvoiceTypeSchema, raw.type, 'invoice type'),
     status: safeParse(InvoiceStatusSchema, statusMapped, 'invoice status'),
-    flag: raw.flag ? safeParse(InvoiceFlagSchema, raw.flag, 'invoice flag') : 'issued',
     totalWithoutVat: amount,
     totalWithVat: amount + vatAmount,
     vat: vatAmount,

@@ -6,7 +6,6 @@ export type { Contact, ContactInput, ContactUpdateInput } from './data/contact';
 export type { Currency } from './data/currency';
 export type {
   Invoice,
-  InvoiceFlag,
   InvoiceInput,
   InvoiceItem,
   InvoiceItemInput,
