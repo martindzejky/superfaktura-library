@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CurrencySchema } from './currency';
 
+// https://github.com/superfaktura/docs/blob/master/value-lists.md#payment-types
 export const PaymentTypeSchema = z.enum([
   'accreditation',
   'barion',
@@ -21,6 +22,7 @@ export const PaymentTypeSchema = z.enum([
 
 export type PaymentType = z.infer<typeof PaymentTypeSchema>;
 
+// https://github.com/superfaktura/docs/blob/master/value-lists.md#invoice-types
 export const InvoiceTypeSchema = z.enum([
   'cancel',
   'delivery',
@@ -34,6 +36,7 @@ export const InvoiceTypeSchema = z.enum([
 
 export type InvoiceType = z.infer<typeof InvoiceTypeSchema>;
 
+// https://github.com/superfaktura/docs/blob/master/value-lists.md#invoice-statuses
 export const InvoiceStatusSchema = z.enum(['issued', 'partially_paid', 'paid', 'overdue']);
 
 export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>;

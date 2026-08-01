@@ -52,8 +52,11 @@ export const ApiInvoiceResponseSchema = z.object({
   user_profile_id: z.string(),
   client_id: z.string(),
   name: z.string(),
-  type: z.string(), // invoice type from value lists
-  status: z.string(), // numeric string: 1=issued, 2=partially_paid, 3=paid, 99=overdue
+  // https://github.com/superfaktura/docs/blob/master/value-lists.md#invoice-types
+  type: z.string(),
+  // numeric string: 1=issued, 2=partially_paid, 3=paid, 99=overdue
+  // https://github.com/superfaktura/docs/blob/master/value-lists.md#invoice-statuses
+  status: z.string(),
   amount: z.string(), // total without VAT
   vat: z.string(), // VAT amount
   amount_paid: z.string(),
@@ -70,7 +73,7 @@ export const ApiInvoiceResponseSchema = z.object({
   due: z.string(), // due date
   paid: z.string(), // paid amount (string)
   paydate: z.string().nullable(), // payment date
-  payment_type: z.string().nullable(),
+  payment_type: z.string().nullable(), // https://github.com/superfaktura/docs/blob/master/value-lists.md#payment-types
   header_comment: z.string().nullable(),
   internal_comment: z.string().nullable(),
   comment: z.string().nullable(),
@@ -122,12 +125,12 @@ export const ApiInvoicePaymentResponseSchema = z.object({
   home_currency: z.string(), // home currency symbol
   invoice_currency: z.string(), // invoice currency symbol
   invoice_id: z.number(),
-  invoice_type: z.string(), // "regular", "proforma", "cancel"
+  invoice_type: z.string(), // https://github.com/superfaktura/docs/blob/master/value-lists.md#invoice-types
   overdue: z.boolean(),
   paid: z.number(), // total paid amount
   parent_id: z.number().nullable(),
   payment_id: z.string(),
-  status: z.number(), // invoice status after payment
+  status: z.number(), // https://github.com/superfaktura/docs/blob/master/value-lists.md#invoice-statuses
   to_pay: z.number(), // remaining amount to pay
   to_pay_home_cur: z.number(), // remaining amount in home currency
 });

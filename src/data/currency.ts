@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// https://github.com/superfaktura/docs/blob/master/value-lists.md#currencies
 export const CurrencySchema = z.enum([
   'AED',
   'AFN',

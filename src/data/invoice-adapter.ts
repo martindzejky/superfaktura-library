@@ -5,6 +5,7 @@ import type { ApiInvoiceItemResponse, ApiInvoiceResponse } from './api';
 import type { Invoice, InvoiceInput, InvoiceItem, InvoiceItemInput, InvoiceUpdateInput } from './invoice';
 import { InvoiceStatusSchema, InvoiceTypeSchema, PaymentTypeSchema } from './invoice';
 
+// https://github.com/superfaktura/docs/blob/master/value-lists.md#invoice-statuses
 const STATUS_LOOKUP: Record<string, string> = {
   '1': 'issued',
   '2': 'partially_paid',
