@@ -77,10 +77,17 @@ export function safeParse<T>(schema: ZodType<T>, data: unknown, label: string): 
 
 export function normalizeErrorMessages(errorMessage: unknown): string[] {
   if (Array.isArray(errorMessage)) {
-    return errorMessage.filter((value): value is string => typeof value === 'string');
+    return errorMessage.filter((value): value is string => typeof value === 'string' && value.trim() !== '');
   }
   if (typeof errorMessage === 'string' && errorMessage.trim() !== '') {
     return [errorMessage];
+  }
+  if (isRecord(errorMessage)) {
+    const nested: string[] = [];
+    for (const value of Object.values(errorMessage)) {
+      nested.push(...normalizeErrorMessages(value));
+    }
+    return nested;
   }
   return [];
 }

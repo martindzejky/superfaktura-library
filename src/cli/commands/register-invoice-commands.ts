@@ -106,7 +106,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .description('Create an invoice.')
     .option('--data <json>', 'JSON object or @path/to/file.json')
     .option('--name <text>', 'Invoice name')
-    .option('--price <number>', 'Invoice total price', Number)
+    .option('--price <number>', 'Unit price without VAT for a single item', Number)
     .option('--contact-id <id>', 'Contact ID')
     .option('--contact-name <name>', 'Contact name')
     .option('--contact-email <email>', 'Contact email')
@@ -192,7 +192,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .argument('<id>', 'Invoice ID')
     .option('--data <json>', 'JSON object or @path/to/file.json')
     .option('--name <text>', 'Invoice name')
-    .option('--price <number>', 'Invoice total price', Number)
+    .option('--price <number>', 'Unit price without VAT for a single item', Number)
     .option('--contact-id <id>', 'Contact ID')
     .option('--contact-name <name>', 'Contact name')
     .option('--contact-email <email>', 'Contact email')
@@ -286,11 +286,11 @@ export function registerInvoiceCommands(rootProgram: Command): void {
 
   invoices
     .command('mark-sent')
-    .description('Mark an invoice as sent by ID.')
+    .description('Toggle invoice sent state by ID.')
     .argument('<id>', 'Invoice ID')
     .action(async (id: string) => {
       const runtime = resolveRuntimeContext(invoices);
       await runtime.client.invoices.markAsSent(id);
-      printVoidAction(runtime.output, 'invoices.mark-sent', `Marked invoice ${id} as sent.`);
+      printVoidAction(runtime.output, 'invoices.mark-sent', `Toggled sent state for invoice ${id}.`);
     });
 }

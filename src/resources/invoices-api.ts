@@ -111,7 +111,7 @@ export class InvoicesApiImpl {
   }
 
   async remove(id: string): Promise<void> {
-    await this.httpClient.request('DELETE', `/invoices/delete/${id}`);
+    await this.httpClient.request('GET', `/invoices/delete/${id}`);
   }
 
   async pay(id: string, input: InvoicePaymentInput = {}): Promise<void> {
@@ -122,7 +122,7 @@ export class InvoicesApiImpl {
     if (input.date !== undefined) body.date = formatDate(input.date);
     if (input.paymentType !== undefined) body.payment_type = input.paymentType;
 
-    await this.httpClient.request('POST', '/invoice_payments/add/ajax%3A1/api%3A1', {
+    await this.httpClient.request('POST', '/invoice_payments/add/ajax:1/api:1', {
       InvoicePayment: body,
     });
   }
@@ -131,7 +131,12 @@ export class InvoicesApiImpl {
     await this.httpClient.request('GET', `/invoices/mark_sent/${id}`);
   }
 
-  downloadPdf(id: string, language: Language = 'slo'): Promise<BinaryResult> {
-    return this.httpClient.requestBinary('GET', `/${language}/invoices/pdf/${id}`);
+  async downloadPdf(id: string, language: Language = 'slo', token?: string): Promise<BinaryResult> {
+    let resolvedToken = token;
+    if (resolvedToken === undefined) {
+      const invoice = await this.getById(id);
+      resolvedToken = invoice.data.token;
+    }
+    return this.httpClient.requestBinary('GET', `/${language}/invoices/pdf/${id}/token:${resolvedToken}`);
   }
 }

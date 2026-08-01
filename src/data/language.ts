@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// https://github.com/superfaktura/docs/blob/master/value-lists.md#language-list
 export const LanguageSchema = z.enum([
   'cze',
   'deu',
