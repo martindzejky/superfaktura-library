@@ -1,12 +1,8 @@
-import { builtinModules, createRequire } from 'node:module';
+import { builtinModules } from 'node:module';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
-
-const require = createRequire(import.meta.url);
-const packageJson = require('./package.json') as {
-  dependencies?: Record<string, string>;
-};
+import packageJson from './package.json' with { type: 'json' };
 
 const dependencyNames = Object.keys(packageJson.dependencies ?? {});
 const rootDir = import.meta.dirname;
