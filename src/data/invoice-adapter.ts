@@ -6,10 +6,10 @@ import type { Invoice, InvoiceInput, InvoiceItem, InvoiceItemInput, InvoiceUpdat
 import { InvoiceStatusSchema, InvoiceTypeSchema, PaymentTypeSchema } from './invoice';
 
 const STATUS_LOOKUP: Record<string, string> = {
-  '1': 'draft',
-  '2': 'sent',
-  '3': 'overdue',
-  '99': 'paid',
+  '1': 'issued',
+  '2': 'partially_paid',
+  '3': 'paid',
+  '99': 'overdue',
 };
 
 export function invoiceItemFromApi(raw: ApiInvoiceItemResponse): InvoiceItem {
@@ -38,7 +38,7 @@ export function invoiceItemFromApi(raw: ApiInvoiceItemResponse): InvoiceItem {
 export function invoiceFromApi(raw: ApiInvoiceResponse, rawItems: ApiInvoiceItemResponse[]): Invoice {
   const amount = safeParseFloat(raw.amount, 'invoice amount');
   const vatAmount = safeParseFloat(raw.vat, 'invoice vat');
-  const statusMapped = STATUS_LOOKUP[raw.status] ?? 'draft';
+  const statusMapped = STATUS_LOOKUP[raw.status] ?? 'issued';
 
   const invoice: Invoice = {
     id: raw.id,

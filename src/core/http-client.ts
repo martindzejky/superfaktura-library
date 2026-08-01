@@ -59,7 +59,7 @@ export class HttpClient {
 
       const error = data.error;
       if (typeof error === 'number' && error > 0) {
-        const details = normalizeErrorMessages(data.error_message);
+        const details = normalizeErrorMessages(data.error_message ?? data.error_messages ?? data.message);
         if (details.length > 0) {
           throw new ValidationError(response.status, data, details);
         }

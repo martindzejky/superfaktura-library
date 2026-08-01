@@ -14,10 +14,7 @@ export function toNamedQueryPath(query: ListQuery = {}): string {
 
   const segments = Object.entries(params)
     .filter(([, value]) => value !== undefined)
-    .map(([key, value]) => {
-      const encodedValue = encodeURIComponent(String(value));
-      return `${key}%3A${encodedValue}`;
-    });
+    .map(([key, value]) => `${key}:${encodeURIComponent(String(value))}`);
 
   return segments.join('/');
 }

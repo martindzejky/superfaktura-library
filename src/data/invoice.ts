@@ -21,11 +21,20 @@ export const PaymentTypeSchema = z.enum([
 
 export type PaymentType = z.infer<typeof PaymentTypeSchema>;
 
-export const InvoiceTypeSchema = z.enum(['regular', 'proforma', 'cancel', 'estimate', 'order']);
+export const InvoiceTypeSchema = z.enum([
+  'cancel',
+  'delivery',
+  'draft',
+  'estimate',
+  'order',
+  'proforma',
+  'regular',
+  'reverse_order',
+]);
 
 export type InvoiceType = z.infer<typeof InvoiceTypeSchema>;
 
-export const InvoiceStatusSchema = z.enum(['draft', 'sent', 'overdue', 'paid']);
+export const InvoiceStatusSchema = z.enum(['issued', 'partially_paid', 'paid', 'overdue']);
 
 export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>;
 
@@ -38,14 +47,14 @@ const InvoiceItemInputBase = z.object({
   discount: z.number().optional(), // discount percentage, defaults to 0
 });
 
-// at least one of name or unitPrice must be filled
+// at least one of name or unitPrice must be filled; name must be non-empty when provided
 export const InvoiceItemInputSchema = z.union([
   InvoiceItemInputBase.extend({
-    name: z.string(), // item name
+    name: z.string().min(1), // item name
     unitPrice: z.number().optional(), // price per unit without VAT
   }),
   InvoiceItemInputBase.extend({
-    name: z.string().optional(), // item name
+    name: z.string().min(1).optional(), // item name
     unitPrice: z.number(), // price per unit without VAT
   }),
 ]);

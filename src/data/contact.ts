@@ -3,7 +3,7 @@ import { CurrencySchema } from './currency';
 
 // fields that can be specified when creating a contact (name is required)
 export const ContactInputSchema = z.object({
-  name: z.string(), // client name (required)
+  name: z.string().min(1), // client name (required, non-empty)
   ico: z.string().optional(), // IČO - company registration number
   dic: z.string().optional(), // DIČ - tax ID (SK)
   icDph: z.string().optional(), // IČ DPH (SK) / DIČ (CZ) - VAT ID

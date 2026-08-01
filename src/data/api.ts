@@ -52,8 +52,8 @@ export const ApiInvoiceResponseSchema = z.object({
   user_profile_id: z.string(),
   client_id: z.string(),
   name: z.string(),
-  type: z.string(), // "regular", "proforma", "cancel", "estimate", "order"
-  status: z.string(), // numeric string: 1=draft, 2=sent, 3=overdue, 99=paid
+  type: z.string(), // invoice type from value lists
+  status: z.string(), // numeric string: 1=issued, 2=partially_paid, 3=paid, 99=overdue
   amount: z.string(), // total without VAT
   vat: z.string(), // VAT amount
   amount_paid: z.string(),

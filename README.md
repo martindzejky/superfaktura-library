@@ -88,7 +88,8 @@ await client.invoices.remove(invoice.id);
 await client.contacts.remove(contact.id);
 
 // Download invoice PDF (slo = Slovak language)
-const pdf = await client.invoices.downloadPdf(invoice.id, 'slo');
+// Token is optional; if omitted the SDK fetches the invoice first.
+const pdf = await client.invoices.downloadPdf(invoice.id, 'slo', invoice.token);
 
 // List and get return ListResult<T> and Result<T>
 const { ... } = await client.contacts.list({ page: 1, perPage: 10 });
@@ -131,7 +132,7 @@ npx superfaktura invoices create \
 # Update invoice name only
 npx superfaktura invoices update 123 --name "New name"
 
-# Update invoice with simple flags (replaces items with one unit_price item)
+# Update invoice with simple flags (sets items to one unit_price item)
 npx superfaktura invoices update 123 --price 150
 
 # Create invoice from file
@@ -147,7 +148,7 @@ npx superfaktura invoices pdf 123 --path ./invoice-123.pdf
 npx superfaktura invoices pay 123 \
   --data '{"amount":100,"paymentType":"transfer"}'
 
-# Mark/unmark invoice as sent
+# Toggle invoice sent state (marks as sent, or unmarks if already sent)
 npx superfaktura invoices mark-sent 123
 
 # Delete invoice
