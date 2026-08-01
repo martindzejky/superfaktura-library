@@ -4,7 +4,7 @@ Simple TypeScript SDK and CLI for [SuperFaktura](https://www.superfaktura.sk) co
 
 ## Requirements
 
-- Node.js `>=22`
+- Node.js `>=22.12`
 
 ## Install
 

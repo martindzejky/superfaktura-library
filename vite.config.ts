@@ -1,25 +1,47 @@
+import { builtinModules, createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
-import { externalizeDeps } from 'vite-plugin-externalize-deps';
+
+const require = createRequire(import.meta.url);
+const packageJson = require('./package.json') as {
+  dependencies?: Record<string, string>;
+};
+
+const dependencyNames = Object.keys(packageJson.dependencies ?? {});
+const rootDir = import.meta.dirname;
+
+function isExternal(id: string): boolean {
+  if (id.startsWith('node:')) {
+    return true;
+  }
+
+  if (builtinModules.includes(id)) {
+    return true;
+  }
+
+  return dependencyNames.some((dependencyName) => id === dependencyName || id.startsWith(`${dependencyName}/`));
+}
 
 export default defineConfig({
   plugins: [
-    externalizeDeps(),
     dts({
       include: ['src/**/*.ts'],
       tsconfigPath: './tsconfig.json',
-      rollupTypes: true,
+      bundleTypes: true,
     }),
   ],
   build: {
     lib: {
       entry: {
-        index: resolve(__dirname, 'src/index.ts'),
-        cli: resolve(__dirname, 'src/cli/main.ts'),
+        index: resolve(rootDir, 'src/index.ts'),
+        cli: resolve(rootDir, 'src/cli/main.ts'),
       },
       formats: ['es'],
       fileName: (_format, entryName) => `${entryName}.js`,
+    },
+    rollupOptions: {
+      external: isExternal,
     },
     sourcemap: true,
     target: 'node22',
