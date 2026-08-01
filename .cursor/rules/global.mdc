@@ -24,7 +24,7 @@ alwaysApply: true
 
 - Keep setup minimal and modern:
   - ESM-only package
-  - Node `>=22`
+  - Node `>=22.12`
 - Keep CLI IDs positional for commands that require ID input.
 
 ## Coding Style
