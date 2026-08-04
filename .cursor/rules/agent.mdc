@@ -1,9 +1,13 @@
 ---
-description: Global rules and information
+description: Agent context and workflow
 alwaysApply: true
 ---
 
 # Superfaktura Project Basics
+
+**Read `README.md` first** for setup, env vars, and usage.
+If docs and code disagree, trust code and update docs in the same change.
+If anything is unclear or instructions conflict, STOP and ask.
 
 ## Project Purpose
 
@@ -50,3 +54,10 @@ alwaysApply: true
 - `src/resources` contains implementations for the supported CRUD types.
 - `src/core` has the core functionality.
 - `src/core/utils.ts` has simple project-wide utilities. `src/core/types.ts` contains project-wide types.
+
+## Code and verification
+
+After you finish, run `pnpm run typecheck`, `pnpm run lint`, and `pnpm run build` when relevant.
+Write simple, minimal code.
+Prefer existing patterns.
+Do not add unrequested features or APIs.
