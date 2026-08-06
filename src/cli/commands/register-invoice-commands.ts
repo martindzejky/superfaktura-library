@@ -352,14 +352,38 @@ export function registerInvoiceCommands(rootProgram: Command): void {
 
   const markSent = invoices
     .command('mark-sent')
-    .description('Toggle invoice sent state by ID.')
+    .description('Set invoice sent state by ID.')
     .argument('<id>', 'Invoice ID')
-    .action(async (id: string) => {
+    .requiredOption('--sent <boolean>', 'Desired sent state: true or false')
+    .action(async (id: string, options: { sent: string }) => {
+      const sent = parseBooleanFlag(options.sent, '--sent');
       const runtime = resolveRuntimeContext(invoices);
-      await runtime.client.invoices.markAsSent(id);
-      printVoidAction(runtime.output, 'invoices.mark-sent', `Toggled sent state for invoice ${id}.`);
+      const result = await runtime.client.invoices.markAsSent(id, sent);
+      if (runtime.output === 'json') {
+        printSuccess(runtime.output, 'invoices.mark-sent', {
+          statusCode: result.statusCode,
+          data: { id, marked: result.data.marked },
+        });
+        return;
+      }
+      console.log(`Invoice ${id} sent state is ${result.data.marked}.`);
     });
   addCommandHelp(markSent, {
-    examples: ['superfaktura invoices mark-sent 123'],
+    examples: [
+      'superfaktura invoices mark-sent 123 --sent true',
+      'superfaktura invoices mark-sent 123 --sent false',
+    ],
   });
+}
+
+function parseBooleanFlag(value: string, flagName: string): boolean {
+  if (value === 'true') {
+    return true;
+  }
+  if (value === 'false') {
+    return false;
+  }
+  throw new Error(
+    [`Invalid ${flagName}. Use true or false.`, `  superfaktura invoices mark-sent 123 --sent true`].join('\n'),
+  );
 }

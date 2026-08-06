@@ -127,8 +127,23 @@ export class InvoicesApiImpl {
     });
   }
 
-  async markAsSent(id: string): Promise<void> {
-    await this.httpClient.request('GET', `/invoices/mark_sent/${id}`);
+  async markAsSent(id: string, sent?: boolean): Promise<Result<{ marked: boolean }>> {
+    let result = await this.toggleMarkSent(id);
+    if (sent !== undefined && result.data.marked !== sent) {
+      result = await this.toggleMarkSent(id);
+    }
+    return result;
+  }
+
+  private async toggleMarkSent(id: string): Promise<Result<{ marked: boolean }>> {
+    const result = await this.httpClient.request('GET', `/invoices/mark_sent/${id}`);
+    if (typeof result.data.marked !== 'boolean') {
+      throw new Error('Unexpected API response: missing marked boolean.');
+    }
+    return {
+      statusCode: result.statusCode,
+      data: { marked: result.data.marked },
+    };
   }
 
   async downloadPdf(id: string, language: Language = 'slo', token?: string): Promise<BinaryResult> {
