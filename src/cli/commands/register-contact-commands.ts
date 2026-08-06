@@ -17,7 +17,13 @@ interface ContactOptions {
 
 function buildContactCreateInput(options: ContactOptions): ContactInput {
   if (options.name === undefined || options.name.trim() === '') {
-    throw new Error('Provide --name or use --data for contact payload.');
+    throw new Error(
+      [
+        'Provide --name or use --data for contact payload.',
+        '  superfaktura contacts create --name "ACME s.r.o." --email "billing@acme.test"',
+        '  superfaktura contacts create --data \'{"name":"ACME s.r.o.","email":"billing@acme.test"}\'',
+      ].join('\n'),
+    );
   }
 
   const raw: UnknownRecord = { name: options.name };
@@ -38,7 +44,13 @@ function buildContactUpdateInput(options: ContactOptions): ContactUpdateInput {
   }
 
   if (Object.keys(raw).length === 0) {
-    throw new Error('Provide --data or at least one flag: --name, --email.');
+    throw new Error(
+      [
+        'Provide --data or at least one flag: --name, --email.',
+        '  superfaktura contacts update 123 --email "new-email@acme.test"',
+        '  superfaktura contacts update 123 --data \'{"email":"new-email@acme.test"}\'',
+      ].join('\n'),
+    );
   }
 
   return safeParse(ContactUpdateInputSchema, raw, 'contact update input');

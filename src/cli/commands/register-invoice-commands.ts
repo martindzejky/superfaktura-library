@@ -35,7 +35,13 @@ function buildContactFromFlags(
 
   if (!hasAnyContactFlag) {
     if (requireContact) {
-      throw new Error('Provide --contact-id or --contact-name or --contact-email, or use --data.');
+      throw new Error(
+        [
+          'Provide --contact-id or --contact-name or --contact-email, or use --data.',
+          '  superfaktura invoices create --price 120 --contact-id 123',
+          '  superfaktura invoices create --price 120 --contact-name "ACME s.r.o." --contact-email "billing@acme.test"',
+        ].join('\n'),
+      );
     }
     return undefined;
   }
@@ -119,7 +125,13 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         const raw = await parseDataInput(options.data);
         const parsedContact = parseContactFromData(raw);
         if (parsedContact === undefined) {
-          throw new Error('Missing "contact" in --data JSON.');
+          throw new Error(
+            [
+              'Missing "contact" in --data JSON.',
+              '  superfaktura invoices create --data \'{"items":[{"unitPrice":120}],"contact":{"id":"123"}}\'',
+              '  superfaktura invoices create --data @./invoice-create.json',
+            ].join('\n'),
+          );
         }
         contact = parsedContact;
 
@@ -127,12 +139,23 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         input = safeParse(InvoiceInputSchema, invoiceData, 'invoice input');
       } else {
         if (options.price === undefined) {
-          throw new Error('Provide --price or use --data for invoice create.');
+          throw new Error(
+            [
+              'Provide --price or use --data for invoice create.',
+              '  superfaktura invoices create --price 120 --contact-id 123',
+              '  superfaktura invoices create --data @./invoice-create.json',
+            ].join('\n'),
+          );
         }
 
         const flagContact = buildContactFromFlags(options, true);
         if (flagContact === undefined) {
-          throw new Error('Missing contact data.');
+          throw new Error(
+            [
+              'Missing contact data.',
+              '  superfaktura invoices create --price 120 --contact-id 123',
+            ].join('\n'),
+          );
         }
         contact = flagContact;
 
@@ -230,7 +253,11 @@ export function registerInvoiceCommands(rootProgram: Command): void {
 
         if (!hasAnyInvoiceFlag && !hasAnyContactFlag) {
           throw new Error(
-            'Provide --data or at least one flag: --name, --price, --contact-id, --contact-name, --contact-email.',
+            [
+              'Provide --data or at least one flag: --name, --price, --contact-id, --contact-name, --contact-email.',
+              '  superfaktura invoices update 123 --name "New name"',
+              '  superfaktura invoices update 123 --data @./invoice-update.json',
+            ].join('\n'),
           );
         }
 
