@@ -91,7 +91,6 @@ export function registerContactCommands(rootProgram: Command): void {
     .option('--name <name>', 'Contact name')
     .option('--email <email>', 'Contact email')
     .action(async (options: ContactOptions) => {
-      const runtime = resolveRuntimeContext(contacts);
       let input: ContactInput;
       if (options.data !== undefined) {
         const raw = await parseDataInput(options.data);
@@ -99,6 +98,7 @@ export function registerContactCommands(rootProgram: Command): void {
       } else {
         input = buildContactCreateInput(options);
       }
+      const runtime = resolveRuntimeContext(contacts);
       const result = await runtime.client.contacts.create(input);
       printContactMutation(runtime.output, 'contacts.create', 'Created', result);
     });
@@ -164,7 +164,6 @@ export function registerContactCommands(rootProgram: Command): void {
     .option('--name <name>', 'Contact name')
     .option('--email <email>', 'Contact email')
     .action(async (id: string, options: ContactOptions) => {
-      const runtime = resolveRuntimeContext(contacts);
       let input: ContactUpdateInput;
       if (options.data !== undefined) {
         const raw = await parseDataInput(options.data);
@@ -172,6 +171,7 @@ export function registerContactCommands(rootProgram: Command): void {
       } else {
         input = buildContactUpdateInput(options);
       }
+      const runtime = resolveRuntimeContext(contacts);
       await runtime.client.contacts.update(id, input);
       printVoidAction(runtime.output, 'contacts.update', `Updated contact ${id}.`);
     });

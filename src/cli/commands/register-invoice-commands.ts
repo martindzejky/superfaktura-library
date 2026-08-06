@@ -112,8 +112,6 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .option('--contact-name <name>', 'Contact name')
     .option('--contact-email <email>', 'Contact email')
     .action(async (options: InvoiceOptions) => {
-      const runtime = resolveRuntimeContext(invoices);
-
       let input: InvoiceInput;
       let contact: ContactInput | { id: string };
 
@@ -147,6 +145,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         input = safeParse(InvoiceInputSchema, invoiceRaw, 'invoice input');
       }
 
+      const runtime = resolveRuntimeContext(invoices);
       const result = await runtime.client.invoices.create(input, contact);
       printInvoiceMutation(runtime.output, 'invoices.create', 'Created', result);
     });
@@ -215,8 +214,6 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .option('--contact-name <name>', 'Contact name')
     .option('--contact-email <email>', 'Contact email')
     .action(async (id: string, options: InvoiceOptions) => {
-      const runtime = resolveRuntimeContext(invoices);
-
       let input: InvoiceUpdateInput;
       let contact: ContactInput | { id: string } | undefined;
 
@@ -248,6 +245,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         contact = buildContactFromFlags(options, false);
       }
 
+      const runtime = resolveRuntimeContext(invoices);
       await runtime.client.invoices.update(id, input, contact);
       printVoidAction(runtime.output, 'invoices.update', `Updated invoice ${id}.`);
     });
@@ -279,8 +277,8 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .option('--path <file>', 'Output PDF path')
     .option('--language <code>', 'PDF language code (slo, cze, eng, ...)', 'slo')
     .action(async (id: string, options: { path?: string; language: string }) => {
-      const runtime = resolveRuntimeContext(invoices);
       const language = safeParse(LanguageSchema, options.language, 'language');
+      const runtime = resolveRuntimeContext(invoices);
       const pdfResult = await runtime.client.invoices.downloadPdf(id, language);
 
       const outputPath = options.path ?? `invoice-${id}.pdf`;
@@ -308,12 +306,12 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .argument('<id>', 'Invoice ID')
     .option('--data <json>', 'JSON object or @path/to/file.json')
     .action(async (id: string, options: { data?: string }) => {
-      const runtime = resolveRuntimeContext(invoices);
       let paymentInput: InvoicePaymentInput | undefined;
       if (options.data !== undefined) {
         const raw = await parseDataInput(options.data);
         paymentInput = safeParse(InvoicePaymentInputSchema, raw, 'invoice payment input');
       }
+      const runtime = resolveRuntimeContext(invoices);
       await runtime.client.invoices.pay(id, paymentInput);
       printVoidAction(runtime.output, 'invoices.pay', `Marked invoice ${id} as paid.`);
     });
