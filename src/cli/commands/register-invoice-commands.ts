@@ -3,6 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess, printVoidAction } from '../output-format';
+import { addCommandHelp } from '../help-text';
 import type { Invoice, InvoiceInput, InvoiceUpdateInput } from '../../data/invoice';
 import { InvoiceInputSchema, InvoiceUpdateInputSchema } from '../../data/invoice';
 import type { ContactInput } from '../../data/contact';
@@ -101,7 +102,7 @@ function printInvoiceList(output: OutputFormat, result: ListResult<Invoice>): vo
 export function registerInvoiceCommands(rootProgram: Command): void {
   const invoices = rootProgram.command('invoices').description('Manage invoices.');
 
-  invoices
+  const create = invoices
     .command('create')
     .description('Create an invoice.')
     .option('--data <json>', 'JSON object or @path/to/file.json')
@@ -149,8 +150,15 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       const result = await runtime.client.invoices.create(input, contact);
       printInvoiceMutation(runtime.output, 'invoices.create', 'Created', result);
     });
+  addCommandHelp(create, {
+    examples: [
+      'superfaktura invoices create --price 120 --contact-id 123',
+      'superfaktura invoices create --price 120 --contact-name "ACME s.r.o." --contact-email "billing@acme.test"',
+      'superfaktura invoices create --data @./invoice-create.json',
+    ],
+  });
 
-  invoices
+  const get = invoices
     .command('get')
     .description('Get an invoice by ID.')
     .argument('<id>', 'Invoice ID')
@@ -159,8 +167,11 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       const result = await runtime.client.invoices.getById(id);
       printInvoiceDetail(runtime.output, result);
     });
+  addCommandHelp(get, {
+    examples: ['superfaktura invoices get 123', 'superfaktura invoices get 123 --output json'],
+  });
 
-  invoices
+  const list = invoices
     .command('list')
     .description('List invoices.')
     .option('--page <number>', 'Page number', Number)
@@ -185,8 +196,15 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       const result = await runtime.client.invoices.list(query);
       printInvoiceList(runtime.output, result);
     });
+  addCommandHelp(list, {
+    examples: [
+      'superfaktura invoices list',
+      'superfaktura invoices list --page 1 --per-page 10 --search 2026',
+      'superfaktura invoices list --output json',
+    ],
+  });
 
-  invoices
+  const update = invoices
     .command('update')
     .description('Update an invoice by ID.')
     .argument('<id>', 'Invoice ID')
@@ -233,8 +251,15 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       await runtime.client.invoices.update(id, input, contact);
       printVoidAction(runtime.output, 'invoices.update', `Updated invoice ${id}.`);
     });
+  addCommandHelp(update, {
+    examples: [
+      'superfaktura invoices update 123 --name "New name"',
+      'superfaktura invoices update 123 --price 150',
+      'superfaktura invoices update 123 --data @./invoice-update.json',
+    ],
+  });
 
-  invoices
+  const remove = invoices
     .command('delete')
     .description('Delete an invoice by ID.')
     .argument('<id>', 'Invoice ID')
@@ -243,8 +268,11 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       await runtime.client.invoices.remove(id);
       printVoidAction(runtime.output, 'invoices.delete', `Deleted invoice ${id}.`);
     });
+  addCommandHelp(remove, {
+    examples: ['superfaktura invoices delete 123'],
+  });
 
-  invoices
+  const pdf = invoices
     .command('pdf')
     .description('Download invoice PDF.')
     .argument('<id>', 'Invoice ID')
@@ -253,22 +281,28 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .action(async (id: string, options: { path?: string; language: string }) => {
       const runtime = resolveRuntimeContext(invoices);
       const language = safeParse(LanguageSchema, options.language, 'language');
-      const pdf = await runtime.client.invoices.downloadPdf(id, language);
+      const pdfResult = await runtime.client.invoices.downloadPdf(id, language);
 
       const outputPath = options.path ?? `invoice-${id}.pdf`;
-      await writeFile(outputPath, Buffer.from(pdf.data));
+      await writeFile(outputPath, Buffer.from(pdfResult.data));
 
       printSuccess(runtime.output, 'invoices.pdf', {
-        statusCode: pdf.statusCode,
+        statusCode: pdfResult.statusCode,
         data: {
           path: outputPath,
-          bytes: pdf.data.byteLength,
-          contentType: pdf.contentType,
+          bytes: pdfResult.data.byteLength,
+          contentType: pdfResult.contentType,
         },
       });
     });
+  addCommandHelp(pdf, {
+    examples: [
+      'superfaktura invoices pdf 123',
+      'superfaktura invoices pdf 123 --path ./invoice-123.pdf --language eng',
+    ],
+  });
 
-  invoices
+  const pay = invoices
     .command('pay')
     .description('Pay an invoice by ID.')
     .argument('<id>', 'Invoice ID')
@@ -283,8 +317,14 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       await runtime.client.invoices.pay(id, paymentInput);
       printVoidAction(runtime.output, 'invoices.pay', `Marked invoice ${id} as paid.`);
     });
+  addCommandHelp(pay, {
+    examples: [
+      'superfaktura invoices pay 123',
+      'superfaktura invoices pay 123 --data \'{"amount":100,"paymentType":"transfer"}\'',
+    ],
+  });
 
-  invoices
+  const markSent = invoices
     .command('mark-sent')
     .description('Toggle invoice sent state by ID.')
     .argument('<id>', 'Invoice ID')
@@ -293,4 +333,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       await runtime.client.invoices.markAsSent(id);
       printVoidAction(runtime.output, 'invoices.mark-sent', `Toggled sent state for invoice ${id}.`);
     });
+  addCommandHelp(markSent, {
+    examples: ['superfaktura invoices mark-sent 123'],
+  });
 }
