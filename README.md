@@ -152,7 +152,7 @@ npx superfaktura invoices pay 123 --amount 100 --payment-type transfer
 npx superfaktura invoices pay 123 \
   --data '{"amount":100,"paymentType":"transfer"}'
 
-# Set invoice sent state (idempotent; safe to retry)
+# Set invoice sent state (final state matches --sent; API is toggle-only)
 npx superfaktura invoices mark-sent 123 --sent true
 npx superfaktura invoices mark-sent 123 --sent false
 
