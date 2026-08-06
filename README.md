@@ -76,12 +76,12 @@ await client.invoices.update(invoice.id, {
   name: 'Invoice 2026-001 (revised)',
 });
 
-// Pay, mark as sent
+// Pay, mark as sent (second arg sets desired state; omit to toggle)
 await client.invoices.pay(invoice.id, {
   amount: 2.5,
   paymentType: 'transfer',
 });
-await client.invoices.markAsSent(invoice.id);
+await client.invoices.markAsSent(invoice.id, true);
 
 // Deleting
 await client.invoices.remove(invoice.id);
@@ -138,18 +138,23 @@ npx superfaktura invoices update 123 --price 150
 # Create invoice from file
 npx superfaktura invoices create --data @./invoice-create.json
 
+# Create contact from stdin
+cat ./contact.json | npx superfaktura contacts create --data -
+
 # Update invoice by ID from file
 npx superfaktura invoices update 123 --data @./invoice-update.json
 
 # Download invoice PDF
 npx superfaktura invoices pdf 123 --path ./invoice-123.pdf
 
-# Pay invoice with optional payment payload
+# Pay invoice with simple flags or JSON payload
+npx superfaktura invoices pay 123 --amount 100 --payment-type transfer
 npx superfaktura invoices pay 123 \
   --data '{"amount":100,"paymentType":"transfer"}'
 
-# Toggle invoice sent state (marks as sent, or unmarks if already sent)
-npx superfaktura invoices mark-sent 123
+# Set invoice sent state (final state matches --sent; API is toggle-only)
+npx superfaktura invoices mark-sent 123 --sent true
+npx superfaktura invoices mark-sent 123 --sent false
 
 # Delete invoice
 npx superfaktura invoices delete 123

@@ -3,6 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess, printVoidAction } from '../output-format';
+import { addCommandHelp } from '../help-text';
 import type { Invoice, InvoiceInput, InvoiceUpdateInput } from '../../data/invoice';
 import { InvoiceInputSchema, InvoiceUpdateInputSchema } from '../../data/invoice';
 import type { ContactInput } from '../../data/contact';
@@ -34,7 +35,13 @@ function buildContactFromFlags(
 
   if (!hasAnyContactFlag) {
     if (requireContact) {
-      throw new Error('Provide --contact-id or --contact-name or --contact-email, or use --data.');
+      throw new Error(
+        [
+          'Provide --contact-id or --contact-name or --contact-email, or use --data.',
+          '  superfaktura invoices create --price 120 --contact-id 123',
+          '  superfaktura invoices create --price 120 --contact-name "ACME s.r.o." --contact-email "billing@acme.test"',
+        ].join('\n'),
+      );
     }
     return undefined;
   }
@@ -101,18 +108,16 @@ function printInvoiceList(output: OutputFormat, result: ListResult<Invoice>): vo
 export function registerInvoiceCommands(rootProgram: Command): void {
   const invoices = rootProgram.command('invoices').description('Manage invoices.');
 
-  invoices
+  const create = invoices
     .command('create')
     .description('Create an invoice.')
-    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
     .option('--name <text>', 'Invoice name')
     .option('--price <number>', 'Unit price without VAT for a single item', Number)
     .option('--contact-id <id>', 'Contact ID')
     .option('--contact-name <name>', 'Contact name')
     .option('--contact-email <email>', 'Contact email')
     .action(async (options: InvoiceOptions) => {
-      const runtime = resolveRuntimeContext(invoices);
-
       let input: InvoiceInput;
       let contact: ContactInput | { id: string };
 
@@ -120,7 +125,13 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         const raw = await parseDataInput(options.data);
         const parsedContact = parseContactFromData(raw);
         if (parsedContact === undefined) {
-          throw new Error('Missing "contact" in --data JSON.');
+          throw new Error(
+            [
+              'Missing "contact" in --data JSON.',
+              '  superfaktura invoices create --data \'{"items":[{"unitPrice":120}],"contact":{"id":"123"}}\'',
+              '  superfaktura invoices create --data @./invoice-create.json',
+            ].join('\n'),
+          );
         }
         contact = parsedContact;
 
@@ -128,12 +139,20 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         input = safeParse(InvoiceInputSchema, invoiceData, 'invoice input');
       } else {
         if (options.price === undefined) {
-          throw new Error('Provide --price or use --data for invoice create.');
+          throw new Error(
+            [
+              'Provide --price or use --data for invoice create.',
+              '  superfaktura invoices create --price 120 --contact-id 123',
+              '  superfaktura invoices create --data @./invoice-create.json',
+            ].join('\n'),
+          );
         }
 
         const flagContact = buildContactFromFlags(options, true);
         if (flagContact === undefined) {
-          throw new Error('Missing contact data.');
+          throw new Error(
+            ['Missing contact data.', '  superfaktura invoices create --price 120 --contact-id 123'].join('\n'),
+          );
         }
         contact = flagContact;
 
@@ -146,11 +165,21 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         input = safeParse(InvoiceInputSchema, invoiceRaw, 'invoice input');
       }
 
+      const runtime = resolveRuntimeContext(invoices);
       const result = await runtime.client.invoices.create(input, contact);
       printInvoiceMutation(runtime.output, 'invoices.create', 'Created', result);
     });
+  addCommandHelp(create, {
+    dataShape: '{"name":"Invoice 2026-001","items":[{"unitPrice":120}],"contact":{"id":"123"}}',
+    examples: [
+      'superfaktura invoices create --price 120 --contact-id 123',
+      'superfaktura invoices create --price 120 --contact-name "ACME s.r.o." --contact-email "billing@acme.test"',
+      'superfaktura invoices create --data @./invoice-create.json',
+      'cat ./invoice-create.json | superfaktura invoices create --data -',
+    ],
+  });
 
-  invoices
+  const get = invoices
     .command('get')
     .description('Get an invoice by ID.')
     .argument('<id>', 'Invoice ID')
@@ -159,8 +188,11 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       const result = await runtime.client.invoices.getById(id);
       printInvoiceDetail(runtime.output, result);
     });
+  addCommandHelp(get, {
+    examples: ['superfaktura invoices get 123', 'superfaktura invoices get 123 --output json'],
+  });
 
-  invoices
+  const list = invoices
     .command('list')
     .description('List invoices.')
     .option('--page <number>', 'Page number', Number)
@@ -185,20 +217,25 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       const result = await runtime.client.invoices.list(query);
       printInvoiceList(runtime.output, result);
     });
+  addCommandHelp(list, {
+    examples: [
+      'superfaktura invoices list',
+      'superfaktura invoices list --page 1 --per-page 10 --search 2026',
+      'superfaktura invoices list --output json',
+    ],
+  });
 
-  invoices
+  const update = invoices
     .command('update')
     .description('Update an invoice by ID.')
     .argument('<id>', 'Invoice ID')
-    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
     .option('--name <text>', 'Invoice name')
     .option('--price <number>', 'Unit price without VAT for a single item', Number)
     .option('--contact-id <id>', 'Contact ID')
     .option('--contact-name <name>', 'Contact name')
     .option('--contact-email <email>', 'Contact email')
     .action(async (id: string, options: InvoiceOptions) => {
-      const runtime = resolveRuntimeContext(invoices);
-
       let input: InvoiceUpdateInput;
       let contact: ContactInput | { id: string } | undefined;
 
@@ -215,7 +252,11 @@ export function registerInvoiceCommands(rootProgram: Command): void {
 
         if (!hasAnyInvoiceFlag && !hasAnyContactFlag) {
           throw new Error(
-            'Provide --data or at least one flag: --name, --price, --contact-id, --contact-name, --contact-email.',
+            [
+              'Provide --data or at least one flag: --name, --price, --contact-id, --contact-name, --contact-email.',
+              '  superfaktura invoices update 123 --name "New name"',
+              '  superfaktura invoices update 123 --data @./invoice-update.json',
+            ].join('\n'),
           );
         }
 
@@ -230,11 +271,20 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         contact = buildContactFromFlags(options, false);
       }
 
+      const runtime = resolveRuntimeContext(invoices);
       await runtime.client.invoices.update(id, input, contact);
       printVoidAction(runtime.output, 'invoices.update', `Updated invoice ${id}.`);
     });
+  addCommandHelp(update, {
+    dataShape: '{"name":"New name","items":[{"unitPrice":150}],"contact":{"id":"123"}}',
+    examples: [
+      'superfaktura invoices update 123 --name "New name"',
+      'superfaktura invoices update 123 --price 150',
+      'superfaktura invoices update 123 --data @./invoice-update.json',
+    ],
+  });
 
-  invoices
+  const remove = invoices
     .command('delete')
     .description('Delete an invoice by ID.')
     .argument('<id>', 'Invoice ID')
@@ -243,54 +293,106 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       await runtime.client.invoices.remove(id);
       printVoidAction(runtime.output, 'invoices.delete', `Deleted invoice ${id}.`);
     });
+  addCommandHelp(remove, {
+    examples: ['superfaktura invoices delete 123'],
+  });
 
-  invoices
+  const pdf = invoices
     .command('pdf')
     .description('Download invoice PDF.')
     .argument('<id>', 'Invoice ID')
     .option('--path <file>', 'Output PDF path')
     .option('--language <code>', 'PDF language code (slo, cze, eng, ...)', 'slo')
     .action(async (id: string, options: { path?: string; language: string }) => {
-      const runtime = resolveRuntimeContext(invoices);
       const language = safeParse(LanguageSchema, options.language, 'language');
-      const pdf = await runtime.client.invoices.downloadPdf(id, language);
+      const runtime = resolveRuntimeContext(invoices);
+      const pdfResult = await runtime.client.invoices.downloadPdf(id, language);
 
       const outputPath = options.path ?? `invoice-${id}.pdf`;
-      await writeFile(outputPath, Buffer.from(pdf.data));
+      await writeFile(outputPath, Buffer.from(pdfResult.data));
 
       printSuccess(runtime.output, 'invoices.pdf', {
-        statusCode: pdf.statusCode,
+        statusCode: pdfResult.statusCode,
         data: {
           path: outputPath,
-          bytes: pdf.data.byteLength,
-          contentType: pdf.contentType,
+          bytes: pdfResult.data.byteLength,
+          contentType: pdfResult.contentType,
         },
       });
     });
+  addCommandHelp(pdf, {
+    examples: [
+      'superfaktura invoices pdf 123',
+      'superfaktura invoices pdf 123 --path ./invoice-123.pdf --language eng',
+    ],
+  });
 
-  invoices
+  const pay = invoices
     .command('pay')
     .description('Pay an invoice by ID.')
     .argument('<id>', 'Invoice ID')
-    .option('--data <json>', 'JSON object or @path/to/file.json')
-    .action(async (id: string, options: { data?: string }) => {
-      const runtime = resolveRuntimeContext(invoices);
+    .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
+    .option('--amount <number>', 'Payment amount', Number)
+    .option('--payment-type <type>', 'Payment type (transfer, cash, card, ...)')
+    .action(async (id: string, options: { data?: string; amount?: number; paymentType?: string }) => {
       let paymentInput: InvoicePaymentInput | undefined;
       if (options.data !== undefined) {
         const raw = await parseDataInput(options.data);
         paymentInput = safeParse(InvoicePaymentInputSchema, raw, 'invoice payment input');
+      } else if (options.amount !== undefined || options.paymentType !== undefined) {
+        const raw: UnknownRecord = {};
+        if (options.amount !== undefined) {
+          raw.amount = options.amount;
+        }
+        if (options.paymentType !== undefined) {
+          raw.paymentType = options.paymentType;
+        }
+        paymentInput = safeParse(InvoicePaymentInputSchema, raw, 'invoice payment input');
       }
+      const runtime = resolveRuntimeContext(invoices);
       await runtime.client.invoices.pay(id, paymentInput);
       printVoidAction(runtime.output, 'invoices.pay', `Marked invoice ${id} as paid.`);
     });
+  addCommandHelp(pay, {
+    dataShape: '{"amount":100,"paymentType":"transfer"}',
+    examples: [
+      'superfaktura invoices pay 123',
+      'superfaktura invoices pay 123 --amount 100 --payment-type transfer',
+      'superfaktura invoices pay 123 --data \'{"amount":100,"paymentType":"transfer"}\'',
+    ],
+  });
 
-  invoices
+  const markSent = invoices
     .command('mark-sent')
-    .description('Toggle invoice sent state by ID.')
+    .description('Set invoice sent state by ID.')
     .argument('<id>', 'Invoice ID')
-    .action(async (id: string) => {
+    .requiredOption('--sent <boolean>', 'Desired sent state: true or false')
+    .action(async (id: string, options: { sent: string }) => {
+      const sent = parseBooleanFlag(options.sent, '--sent');
       const runtime = resolveRuntimeContext(invoices);
-      await runtime.client.invoices.markAsSent(id);
-      printVoidAction(runtime.output, 'invoices.mark-sent', `Toggled sent state for invoice ${id}.`);
+      const result = await runtime.client.invoices.markAsSent(id, sent);
+      if (runtime.output === 'json') {
+        printSuccess(runtime.output, 'invoices.mark-sent', {
+          statusCode: result.statusCode,
+          data: { id, marked: result.data.marked },
+        });
+        return;
+      }
+      console.log(`Invoice ${id} sent state is ${result.data.marked}.`);
     });
+  addCommandHelp(markSent, {
+    examples: ['superfaktura invoices mark-sent 123 --sent true', 'superfaktura invoices mark-sent 123 --sent false'],
+  });
+}
+
+function parseBooleanFlag(value: string, flagName: string): boolean {
+  if (value === 'true') {
+    return true;
+  }
+  if (value === 'false') {
+    return false;
+  }
+  throw new Error(
+    [`Invalid ${flagName}. Use true or false.`, `  superfaktura invoices mark-sent 123 --sent true`].join('\n'),
+  );
 }

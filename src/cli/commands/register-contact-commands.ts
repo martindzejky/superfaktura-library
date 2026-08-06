@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { parseDataInput } from '../parse-data';
 import { resolveRuntimeContext } from '../runtime-context';
 import { printSuccess, printVoidAction } from '../output-format';
+import { addCommandHelp } from '../help-text';
 import type { Contact, ContactInput, ContactUpdateInput } from '../../data/contact';
 import { ContactInputSchema, ContactUpdateInputSchema } from '../../data/contact';
 import type { ListResult, Result, UnknownRecord } from '../../core/types';
@@ -16,7 +17,13 @@ interface ContactOptions {
 
 function buildContactCreateInput(options: ContactOptions): ContactInput {
   if (options.name === undefined || options.name.trim() === '') {
-    throw new Error('Provide --name or use --data for contact payload.');
+    throw new Error(
+      [
+        'Provide --name or use --data for contact payload.',
+        '  superfaktura contacts create --name "ACME s.r.o." --email "billing@acme.test"',
+        '  superfaktura contacts create --data \'{"name":"ACME s.r.o.","email":"billing@acme.test"}\'',
+      ].join('\n'),
+    );
   }
 
   const raw: UnknownRecord = { name: options.name };
@@ -37,7 +44,13 @@ function buildContactUpdateInput(options: ContactOptions): ContactUpdateInput {
   }
 
   if (Object.keys(raw).length === 0) {
-    throw new Error('Provide --data or at least one flag: --name, --email.');
+    throw new Error(
+      [
+        'Provide --data or at least one flag: --name, --email.',
+        '  superfaktura contacts update 123 --email "new-email@acme.test"',
+        '  superfaktura contacts update 123 --data \'{"email":"new-email@acme.test"}\'',
+      ].join('\n'),
+    );
   }
 
   return safeParse(ContactUpdateInputSchema, raw, 'contact update input');
@@ -83,14 +96,13 @@ function printContactList(output: OutputFormat, result: ListResult<Contact>): vo
 export function registerContactCommands(rootProgram: Command): void {
   const contacts = rootProgram.command('contacts').description('Manage contacts.');
 
-  contacts
+  const create = contacts
     .command('create')
     .description('Create a contact.')
-    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
     .option('--name <name>', 'Contact name')
     .option('--email <email>', 'Contact email')
     .action(async (options: ContactOptions) => {
-      const runtime = resolveRuntimeContext(contacts);
       let input: ContactInput;
       if (options.data !== undefined) {
         const raw = await parseDataInput(options.data);
@@ -98,11 +110,21 @@ export function registerContactCommands(rootProgram: Command): void {
       } else {
         input = buildContactCreateInput(options);
       }
+      const runtime = resolveRuntimeContext(contacts);
       const result = await runtime.client.contacts.create(input);
       printContactMutation(runtime.output, 'contacts.create', 'Created', result);
     });
+  addCommandHelp(create, {
+    dataShape: '{"name":"ACME s.r.o.","email":"billing@acme.test"}',
+    examples: [
+      'superfaktura contacts create --name "ACME s.r.o." --email "billing@acme.test"',
+      'superfaktura contacts create --data \'{"name":"ACME s.r.o.","email":"billing@acme.test"}\'',
+      'superfaktura contacts create --data @./contact.json',
+      'cat ./contact.json | superfaktura contacts create --data -',
+    ],
+  });
 
-  contacts
+  const get = contacts
     .command('get')
     .description('Get a contact by ID.')
     .argument('<id>', 'Contact ID')
@@ -111,8 +133,11 @@ export function registerContactCommands(rootProgram: Command): void {
       const result = await runtime.client.contacts.getById(id);
       printContactDetail(runtime.output, result);
     });
+  addCommandHelp(get, {
+    examples: ['superfaktura contacts get 123', 'superfaktura contacts get 123 --output json'],
+  });
 
-  contacts
+  const list = contacts
     .command('list')
     .description('List contacts.')
     .option('--page <number>', 'Page number', Number)
@@ -137,16 +162,22 @@ export function registerContactCommands(rootProgram: Command): void {
       const result = await runtime.client.contacts.list(query);
       printContactList(runtime.output, result);
     });
+  addCommandHelp(list, {
+    examples: [
+      'superfaktura contacts list',
+      'superfaktura contacts list --page 1 --per-page 10 --search ACME',
+      'superfaktura contacts list --output json',
+    ],
+  });
 
-  contacts
+  const update = contacts
     .command('update')
     .description('Update a contact by ID.')
     .argument('<id>', 'Contact ID')
-    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
     .option('--name <name>', 'Contact name')
     .option('--email <email>', 'Contact email')
     .action(async (id: string, options: ContactOptions) => {
-      const runtime = resolveRuntimeContext(contacts);
       let input: ContactUpdateInput;
       if (options.data !== undefined) {
         const raw = await parseDataInput(options.data);
@@ -154,11 +185,20 @@ export function registerContactCommands(rootProgram: Command): void {
       } else {
         input = buildContactUpdateInput(options);
       }
+      const runtime = resolveRuntimeContext(contacts);
       await runtime.client.contacts.update(id, input);
       printVoidAction(runtime.output, 'contacts.update', `Updated contact ${id}.`);
     });
+  addCommandHelp(update, {
+    dataShape: '{"name":"ACME s.r.o.","email":"new-email@acme.test"}',
+    examples: [
+      'superfaktura contacts update 123 --email "new-email@acme.test"',
+      'superfaktura contacts update 123 --data \'{"email":"new-email@acme.test"}\'',
+      'superfaktura contacts update 123 --data @./contact-update.json',
+    ],
+  });
 
-  contacts
+  const remove = contacts
     .command('delete')
     .description('Delete a contact by ID.')
     .argument('<id>', 'Contact ID')
@@ -167,4 +207,7 @@ export function registerContactCommands(rootProgram: Command): void {
       await runtime.client.contacts.remove(id);
       printVoidAction(runtime.output, 'contacts.delete', `Deleted contact ${id}.`);
     });
+  addCommandHelp(remove, {
+    examples: ['superfaktura contacts delete 123'],
+  });
 }
