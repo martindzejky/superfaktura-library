@@ -115,6 +115,7 @@ export function registerContactCommands(rootProgram: Command): void {
       printContactMutation(runtime.output, 'contacts.create', 'Created', result);
     });
   addCommandHelp(create, {
+    dataShape: '{"name":"ACME s.r.o.","email":"billing@acme.test"}',
     examples: [
       'superfaktura contacts create --name "ACME s.r.o." --email "billing@acme.test"',
       'superfaktura contacts create --data \'{"name":"ACME s.r.o.","email":"billing@acme.test"}\'',
@@ -189,6 +190,7 @@ export function registerContactCommands(rootProgram: Command): void {
       printVoidAction(runtime.output, 'contacts.update', `Updated contact ${id}.`);
     });
   addCommandHelp(update, {
+    dataShape: '{"name":"ACME s.r.o.","email":"new-email@acme.test"}',
     examples: [
       'superfaktura contacts update 123 --email "new-email@acme.test"',
       'superfaktura contacts update 123 --data \'{"email":"new-email@acme.test"}\'',

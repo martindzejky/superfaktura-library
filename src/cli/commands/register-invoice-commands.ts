@@ -151,10 +151,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
         const flagContact = buildContactFromFlags(options, true);
         if (flagContact === undefined) {
           throw new Error(
-            [
-              'Missing contact data.',
-              '  superfaktura invoices create --price 120 --contact-id 123',
-            ].join('\n'),
+            ['Missing contact data.', '  superfaktura invoices create --price 120 --contact-id 123'].join('\n'),
           );
         }
         contact = flagContact;
@@ -173,6 +170,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       printInvoiceMutation(runtime.output, 'invoices.create', 'Created', result);
     });
   addCommandHelp(create, {
+    dataShape: '{"name":"Invoice 2026-001","items":[{"unitPrice":120}],"contact":{"id":"123"}}',
     examples: [
       'superfaktura invoices create --price 120 --contact-id 123',
       'superfaktura invoices create --price 120 --contact-name "ACME s.r.o." --contact-email "billing@acme.test"',
@@ -278,6 +276,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       printVoidAction(runtime.output, 'invoices.update', `Updated invoice ${id}.`);
     });
   addCommandHelp(update, {
+    dataShape: '{"name":"New name","items":[{"unitPrice":150}],"contact":{"id":"123"}}',
     examples: [
       'superfaktura invoices update 123 --name "New name"',
       'superfaktura invoices update 123 --price 150',
@@ -355,6 +354,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       printVoidAction(runtime.output, 'invoices.pay', `Marked invoice ${id} as paid.`);
     });
   addCommandHelp(pay, {
+    dataShape: '{"amount":100,"paymentType":"transfer"}',
     examples: [
       'superfaktura invoices pay 123',
       'superfaktura invoices pay 123 --amount 100 --payment-type transfer',
@@ -381,10 +381,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       console.log(`Invoice ${id} sent state is ${result.data.marked}.`);
     });
   addCommandHelp(markSent, {
-    examples: [
-      'superfaktura invoices mark-sent 123 --sent true',
-      'superfaktura invoices mark-sent 123 --sent false',
-    ],
+    examples: ['superfaktura invoices mark-sent 123 --sent true', 'superfaktura invoices mark-sent 123 --sent false'],
   });
 }
 
