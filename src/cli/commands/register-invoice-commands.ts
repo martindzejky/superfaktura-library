@@ -111,7 +111,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
   const create = invoices
     .command('create')
     .description('Create an invoice.')
-    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
     .option('--name <text>', 'Invoice name')
     .option('--price <number>', 'Unit price without VAT for a single item', Number)
     .option('--contact-id <id>', 'Contact ID')
@@ -177,6 +177,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
       'superfaktura invoices create --price 120 --contact-id 123',
       'superfaktura invoices create --price 120 --contact-name "ACME s.r.o." --contact-email "billing@acme.test"',
       'superfaktura invoices create --data @./invoice-create.json',
+      'cat ./invoice-create.json | superfaktura invoices create --data -',
     ],
   });
 
@@ -230,7 +231,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .command('update')
     .description('Update an invoice by ID.')
     .argument('<id>', 'Invoice ID')
-    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
     .option('--name <text>', 'Invoice name')
     .option('--price <number>', 'Unit price without VAT for a single item', Number)
     .option('--contact-id <id>', 'Contact ID')
@@ -331,7 +332,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .command('pay')
     .description('Pay an invoice by ID.')
     .argument('<id>', 'Invoice ID')
-    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
     .action(async (id: string, options: { data?: string }) => {
       let paymentInput: InvoicePaymentInput | undefined;
       if (options.data !== undefined) {

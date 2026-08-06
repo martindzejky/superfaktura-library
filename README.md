@@ -138,6 +138,9 @@ npx superfaktura invoices update 123 --price 150
 # Create invoice from file
 npx superfaktura invoices create --data @./invoice-create.json
 
+# Create contact from stdin
+cat ./contact.json | npx superfaktura contacts create --data -
+
 # Update invoice by ID from file
 npx superfaktura invoices update 123 --data @./invoice-update.json
 

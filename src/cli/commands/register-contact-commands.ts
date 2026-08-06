@@ -99,7 +99,7 @@ export function registerContactCommands(rootProgram: Command): void {
   const create = contacts
     .command('create')
     .description('Create a contact.')
-    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
     .option('--name <name>', 'Contact name')
     .option('--email <email>', 'Contact email')
     .action(async (options: ContactOptions) => {
@@ -119,6 +119,7 @@ export function registerContactCommands(rootProgram: Command): void {
       'superfaktura contacts create --name "ACME s.r.o." --email "billing@acme.test"',
       'superfaktura contacts create --data \'{"name":"ACME s.r.o.","email":"billing@acme.test"}\'',
       'superfaktura contacts create --data @./contact.json',
+      'cat ./contact.json | superfaktura contacts create --data -',
     ],
   });
 
@@ -172,7 +173,7 @@ export function registerContactCommands(rootProgram: Command): void {
     .command('update')
     .description('Update a contact by ID.')
     .argument('<id>', 'Contact ID')
-    .option('--data <json>', 'JSON object or @path/to/file.json')
+    .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
     .option('--name <name>', 'Contact name')
     .option('--email <email>', 'Contact email')
     .action(async (id: string, options: ContactOptions) => {
