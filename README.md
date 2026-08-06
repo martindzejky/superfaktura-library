@@ -147,7 +147,8 @@ npx superfaktura invoices update 123 --data @./invoice-update.json
 # Download invoice PDF
 npx superfaktura invoices pdf 123 --path ./invoice-123.pdf
 
-# Pay invoice with optional payment payload
+# Pay invoice with simple flags or JSON payload
+npx superfaktura invoices pay 123 --amount 100 --payment-type transfer
 npx superfaktura invoices pay 123 \
   --data '{"amount":100,"paymentType":"transfer"}'
 

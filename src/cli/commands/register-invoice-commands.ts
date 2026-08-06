@@ -333,10 +333,21 @@ export function registerInvoiceCommands(rootProgram: Command): void {
     .description('Pay an invoice by ID.')
     .argument('<id>', 'Invoice ID')
     .option('--data <json>', 'JSON object, @path/to/file.json, or - for stdin')
-    .action(async (id: string, options: { data?: string }) => {
+    .option('--amount <number>', 'Payment amount', Number)
+    .option('--payment-type <type>', 'Payment type (transfer, cash, card, ...)')
+    .action(async (id: string, options: { data?: string; amount?: number; paymentType?: string }) => {
       let paymentInput: InvoicePaymentInput | undefined;
       if (options.data !== undefined) {
         const raw = await parseDataInput(options.data);
+        paymentInput = safeParse(InvoicePaymentInputSchema, raw, 'invoice payment input');
+      } else if (options.amount !== undefined || options.paymentType !== undefined) {
+        const raw: UnknownRecord = {};
+        if (options.amount !== undefined) {
+          raw.amount = options.amount;
+        }
+        if (options.paymentType !== undefined) {
+          raw.paymentType = options.paymentType;
+        }
         paymentInput = safeParse(InvoicePaymentInputSchema, raw, 'invoice payment input');
       }
       const runtime = resolveRuntimeContext(invoices);
@@ -346,6 +357,7 @@ export function registerInvoiceCommands(rootProgram: Command): void {
   addCommandHelp(pay, {
     examples: [
       'superfaktura invoices pay 123',
+      'superfaktura invoices pay 123 --amount 100 --payment-type transfer',
       'superfaktura invoices pay 123 --data \'{"amount":100,"paymentType":"transfer"}\'',
     ],
   });
