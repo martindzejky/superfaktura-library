@@ -41,17 +41,22 @@
   "author": "Martin Jakubík <martindzejky@gmail.com>",
   "license": "MIT",
   "packageManager": "pnpm@10.34.5",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
   "dependencies": {
     "commander": "^15.0.0",
-    "dotenv": "^17.4.2",
-    "zod": "^4.4.3"
+    "dotenv": "^18.0.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.58.12",
-    "@types/node": "^26.1.2",
-    "prettier": "^3.9.6",
+    "@microsoft/api-extractor": "^7.59.1",
+    "@types/node": "^26.6.1",
+    "prettier": "^3.9.8",
     "typescript": "^6.0.3",
-    "vite": "^8.2.0",
-    "vite-plugin-dts": "^5.0.3"
+    "vite": "^8.3.0",
+    "vite-plugin-dts": "^5.1.0"
   }
 }
