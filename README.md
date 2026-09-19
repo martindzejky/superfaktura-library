@@ -170,3 +170,14 @@ Global options:
 - `--company-id`
 - `--base-url`
 - `--output text|json` (default `text`)
+
+## Releases
+
+GitHub Actions publishes this package to npm. Do not publish from your machine.
+
+On `master`:
+
+```bash
+pnpm version patch
+git push origin master --follow-tags
+```
