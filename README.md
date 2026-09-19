@@ -173,32 +173,11 @@ Global options:
 
 ## Releases
 
-GitHub Actions publishes this package to npm. Do not run `npm publish` locally.
+GitHub Actions publishes this package to npm. Do not publish from your machine.
 
-After the changes you want to ship are on `master`, with a clean working tree:
+On `master`:
 
 ```bash
 pnpm version patch
 git push origin master --follow-tags
 ```
-
-`pnpm version` also accepts `minor` and `major`.
-
-`pnpm version` is the npm `version` command. It bumps `package.json`, commits, and creates an annotated git tag like `v1.0.4`. The `v` prefix is npm's default `tag-version-prefix`, and it matches every release tag already in this repo. The Publish workflow runs on `v*.*.*` tags. The number after `v` must match `package.json`. A mismatch fails the workflow on purpose.
-
-A GitHub Release is optional. If you create one from a `v*.*.*` tag, that tag push still runs the same workflow.
-
-### One-time npm setup
-
-The workflow authenticates with npm trusted publishing. There is no `NPM_TOKEN` GitHub secret, and you should not add one.
-
-On the [package settings](https://www.npmjs.com/package/superfaktura-library) page, add a GitHub Actions trusted publisher:
-
-- Organization or user: `martindzejky`
-- Repository: `superfaktura-library`
-- Workflow filename: `publish.yml`
-- Allowed actions: `npm publish`
-
-Save that before you push the next tag. npm does not validate the form until publish time, so a typo only shows up as an auth error.
-
-After the first CI publish succeeds, you can require 2FA and disallow tokens on the same settings page. Trusted publishing still works. Classic automation tokens stop working.
