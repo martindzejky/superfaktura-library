@@ -175,20 +175,18 @@ Global options:
 
 GitHub Actions publishes this package to npm. Do not run `npm publish` locally.
 
-1. Bump `version` in `package.json` to the version you want on npm.
-2. Merge that commit to `master`.
-3. Tag the same commit, then push the tag:
+After the changes you want to ship are on `master`, with a clean working tree:
 
 ```bash
-git tag v1.0.4
-git push origin v1.0.4
+pnpm version patch
+git push origin master --follow-tags
 ```
 
-The number after `v` must match `package.json`. `v1.0.4` publishes `1.0.4`. A mismatch fails the workflow on purpose.
+`pnpm version` also accepts `minor` and `major`.
 
-The Publish workflow then installs, typechecks, lints, builds, and publishes to npm. Watch it under Actions.
+`pnpm version` is the npm `version` command. It bumps `package.json`, commits, and creates an annotated git tag like `v1.0.4`. The `v` prefix is npm's default `tag-version-prefix`, and it matches every release tag already in this repo. The Publish workflow runs on `v*.*.*` tags. The number after `v` must match `package.json`. A mismatch fails the workflow on purpose.
 
-Pushing a `v*` tag is what starts the publish. A GitHub Release is optional. If you create one with a `v*` tag, that tag push still runs the same workflow.
+A GitHub Release is optional. If you create one from a `v*.*.*` tag, that tag push still runs the same workflow.
 
 ### One-time npm setup
 
