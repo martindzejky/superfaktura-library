@@ -12,12 +12,12 @@ NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 
 # pull latest agentfiles
 if [ ! -d "$AGENTFILES/.git" ]; then
-  git clone --recurse-submodules https://github.com/martindzejky/agentfiles.git "$AGENTFILES"
-else
-  git -C "$AGENTFILES" fetch origin master
-  git -C "$AGENTFILES" checkout -B master origin/master
-  git -C "$AGENTFILES" submodule update --init --recursive
+  echo "agentfiles not found at $AGENTFILES" >&2
+  exit 1
 fi
+
+git -C "$AGENTFILES" fetch origin master
+git -C "$AGENTFILES" checkout -B master origin/master
 
 HOME="$HOME" "$AGENTFILES/install"
 
