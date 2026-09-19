@@ -18,6 +18,7 @@ fi
 
 git -C "$AGENTFILES" fetch origin master
 git -C "$AGENTFILES" checkout -B master origin/master
+git -C "$AGENTFILES" submodule update --init --recursive
 
 HOME="$HOME" "$AGENTFILES/install"
 
