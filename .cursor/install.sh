@@ -7,9 +7,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 AGENTFILES="${HOME}/.agentfiles"
 NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 
-# set up nvm and corepack so agentfiles install can run node
+# set up nvm so agentfiles install can run node
 . "$NVM_DIR/nvm.sh"
-corepack enable
 
 # pull latest agentfiles
 if [ ! -d "$AGENTFILES/.git" ]; then
@@ -25,5 +24,6 @@ HOME="$HOME" "$AGENTFILES/install"
 # install dependencies
 cd "$ROOT"
 nvm install
+corepack enable
 corepack prepare --activate
 pnpm install --frozen-lockfile
