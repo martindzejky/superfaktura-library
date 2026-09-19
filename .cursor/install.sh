@@ -5,20 +5,22 @@ set -eu
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 AGENTFILES="${HOME}/.agentfiles"
+NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+
+# set up nvm and corepack so agentfiles install can run node
+. "$NVM_DIR/nvm.sh"
+corepack enable
 
 # pull latest agentfiles
 if [ ! -d "$AGENTFILES/.git" ]; then
-  echo "agentfiles not found at $AGENTFILES" >&2
-  exit 1
+  git clone --recurse-submodules https://github.com/martindzejky/agentfiles.git "$AGENTFILES"
+else
+  git -C "$AGENTFILES" fetch origin master
+  git -C "$AGENTFILES" checkout -B master origin/master
+  git -C "$AGENTFILES" submodule update --init --recursive
 fi
 
-git -C "$AGENTFILES" fetch origin master
-git -C "$AGENTFILES" checkout -B master origin/master
 HOME="$HOME" "$AGENTFILES/install"
-
-# set up nvm and corepack
-. "$NVM_DIR/nvm.sh"
-corepack enable
 
 # install dependencies
 cd "$ROOT"
