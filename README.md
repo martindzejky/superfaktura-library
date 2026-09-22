@@ -9,7 +9,7 @@ Simple TypeScript SDK and CLI for [SuperFaktura](https://www.superfaktura.sk) co
 ## Install
 
 ```bash
-npm install superfaktura-library
+npm install @martindzejky/superfaktura-library
 ```
 
 For local development in this repository:
@@ -35,7 +35,7 @@ Copy `.env.example` to `.env` and fill values.
 ## SDK usage
 
 ```ts
-import { createClient } from 'superfaktura-library';
+import { createClient } from '@martindzejky/superfaktura-library';
 
 const client = createClient({
   // optional when present in env
@@ -170,14 +170,3 @@ Global options:
 - `--company-id`
 - `--base-url`
 - `--output text|json` (default `text`)
-
-## Releases
-
-GitHub Actions publishes this package to npm. Do not publish from your machine.
-
-On `master`:
-
-```bash
-pnpm version patch
-git push origin master --follow-tags
-```

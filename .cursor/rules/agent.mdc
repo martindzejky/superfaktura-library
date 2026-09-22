@@ -11,7 +11,7 @@ If anything is unclear or instructions conflict, STOP and ask.
 
 ## Project Purpose
 
-- This repo is a Node.js TypeScript package named `superfaktura-library`.
+- This repo is a Node.js TypeScript package named `@martindzejky/superfaktura-library`.
 - It provides both:
   - an importable SDK for SuperFaktura API
   - a CLI tool `superfaktura`
@@ -54,6 +54,10 @@ If anything is unclear or instructions conflict, STOP and ask.
 - `src/resources` contains implementations for the supported CRUD types.
 - `src/core` has the core functionality.
 - `src/core/utils.ts` has simple project-wide utilities. `src/core/types.ts` contains project-wide types.
+
+## Releases
+
+GitHub Actions publishes to npm on version tags (`v*.*.*`). On `master`, bump with `pnpm version patch|minor|major` and push with `--follow-tags`. Do not publish from a developer machine.
 
 ## Code and verification
 
